@@ -1,0 +1,80 @@
+# ==================
+# Unity
+# ==================
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+Recordings/
+*.cginc
+*.pidb
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+crashlytics-buildid.txt
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Unity NuGet
+**/Assets/Packages/
+**/Assets/Packages.meta
+
+# ==================
+# .NET / C#
+# ==================
+bin/
+obj/
+*.dll
+*.pdb
+*.exe
+*.cache
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+project.lock.json
+*.nuget.props
+*.nuget.targets
+.nuget/
+*.nupkg
+
+# ==================
+# Vue / Node
+# ==================
+node_modules/
+dist/
+.output/
+.nuxt/
+*.local
+.env
+.env.*
+
+# ==================
+# OS / Editor
+# ==================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vs/
+.vscode/
+.idea/
+
+# ==================
+# Docker
+# ==================
+rabbitmq_data/
