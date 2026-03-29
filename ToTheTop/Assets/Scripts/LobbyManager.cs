@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.SignalR.Client;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -11,6 +12,7 @@ public class LobbyManager : MonoBehaviour
 {
     [Header("Server Config")] [SerializeField]
     private string serverUrl = "http://localhost:5082";
+
     public string ServerUrl => serverUrl;
 
     [Header("Player Config")] [SerializeField]
@@ -26,7 +28,7 @@ public class LobbyManager : MonoBehaviour
     public event Action<string> OnError;
     public event Action OnGameStarting;
     public event Action<string> OnConnectionStatusChanged;
-     public event Action<string, string> OnGameEvent; // (eventType, jsonData)
+    public event Action<string, string> OnGameEvent; // (eventType, jsonData)
 
     private HubConnection _hub;
 
@@ -124,7 +126,7 @@ public class LobbyManager : MonoBehaviour
             OnError?.Invoke($"Ready failed: {request.error}");
         }
     }
-    
+
     // Will be processed in Update
     private volatile LobbyData _pendingLobbyUpdate;
     private volatile bool _gameStarting;
@@ -148,7 +150,7 @@ public class LobbyManager : MonoBehaviour
             // Handlers will march SendAsync calls in the C# backend
             _hub.On<LobbyEventData>("PlayerJoined", data =>
             {
-                Debug.Log($"[SignalR] PlayerJoined: {data.player.name}");
+                Debug.Log($"[SignalR] PlayerJoined: player={data.player}, lobby={data.lobby}, players={data.lobby?.players?.Length}");
                 _pendingLobbyUpdate = data.lobby;
             });
 
@@ -164,27 +166,27 @@ public class LobbyManager : MonoBehaviour
                 _pendingLobbyUpdate = data.lobby;
                 _gameStarting = true;
             });
-            
-             _hub.On<object>("GameCountdown", data =>
+
+            _hub.On<object>("GameCountdown", data =>
             {
                 var json = data.ToString();
                 Debug.Log($"[SignalR] GameCountdown: {json}");
                 _pendingGameEvents.Enqueue(("GameCountdown", json));
             });
- 
+
             _hub.On<object>("GamePlaying", data =>
             {
                 var json = data.ToString();
                 Debug.Log($"[SignalR] GamePlaying: {json}");
                 _pendingGameEvents.Enqueue(("GamePlaying", json));
             });
- 
+
             _hub.On<object>("GameTick", data =>
             {
                 var json = data.ToString();
                 _pendingGameEvents.Enqueue(("GameTick", json));
             });
- 
+
             _hub.On<object>("GameOver", data =>
             {
                 var json = data.ToString();
@@ -204,8 +206,10 @@ public class LobbyManager : MonoBehaviour
                 Debug.Log("[SignalR] Reconnected");
                 _pendingStatus = "connected";
                 // Rejoin the lobby group after reconnection
-                _ = _hub.InvokeAsync("JoinLobbyGroup", lobbyId);
+                _ = _hub.InvokeAsync("JoinLobbyGroup", lobbyId, PlayerId);
+                
                 return System.Threading.Tasks.Task.CompletedTask;
+                
             };
 
             _hub.Closed += (ex) =>
@@ -221,8 +225,28 @@ public class LobbyManager : MonoBehaviour
             Debug.Log("[SignalR] Connected");
 
             // Join the SignalR group for this lobby
-            await _hub.InvokeAsync("JoinLobbyGroup", lobbyId);
+            await _hub.InvokeAsync("JoinLobbyGroup", lobbyId, PlayerId);
             Debug.Log($"[SignalR] Joined group {lobbyId}");
+
+            // Fetch fresh lobby state after joining the group
+            try
+            {
+                using var request = UnityWebRequest.Get($"{serverUrl}/api/lobby/{lobbyId}");
+                await request.SendWebRequest();
+                if (request.result == UnityWebRequest.Result.Success)
+                {
+                    var freshLobby = JsonUtility.FromJson<LobbyData>(request.downloadHandler.text);
+                    _pendingLobbyUpdate = freshLobby;
+                }
+                else
+                {
+                    Debug.LogWarning($"[SignalR] Fresh lobby fetch failed: {request.error}");
+                }
+            }
+            catch (Exception fetchEx)
+            {
+                Debug.LogWarning($"[SignalR] Fresh lobby fetch error: {fetchEx.Message}");
+            }
         }
         catch (Exception ex)
         {
@@ -255,7 +279,7 @@ public class LobbyManager : MonoBehaviour
             _gameStarting = false;
             OnGameStarting?.Invoke();
         }
-        
+
         while (_pendingGameEvents.TryDequeue(out var gameEvent))
         {
             OnGameEvent?.Invoke(gameEvent.type, gameEvent.json);
@@ -325,20 +349,20 @@ public class LobbyManager : MonoBehaviour
 [Serializable]
 public class LobbyData
 {
-    public string id;
-    public string name;
-    public PlayerData[] players;
-    public int maxPlayers;
-    public string state;
+    [JsonInclude] public string id;
+    [JsonInclude] public string name;
+    [JsonInclude] public PlayerData[] players;
+    [JsonInclude] public int maxPlayers;
+    [JsonInclude] public string state;
 }
 
 
 [Serializable]
 public class PlayerData
 {
-    public string id;
-    public string name;
-    public bool isReady;
+    [JsonInclude] public string id;
+    [JsonInclude] public string name;
+    [JsonInclude] public bool isReady;
 }
 
 /// <summary>
@@ -348,8 +372,8 @@ public class PlayerData
 [Serializable]
 public class LobbyEventData
 {
-    public PlayerData player;
-    public string playerId;
-    public bool isReady;
-    public LobbyData lobby;
+    [JsonInclude] public PlayerData player;
+    [JsonInclude] public string playerId;
+    [JsonInclude] public bool isReady;
+    [JsonInclude] public LobbyData lobby;
 }

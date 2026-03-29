@@ -12,7 +12,7 @@ namespace ToTheTopDotnet.Controllers;
 public class LobbyController : ControllerBase
 {
     // for now in-memory, for projection would use Redis or DB 
-    private static readonly Dictionary<string, Lobby> Lobbies = new();
+    private static Dictionary<string, Lobby> Lobbies => LobbyCleanup.Lobbies;
 
     private readonly RabbitMqService _rabbit;
     private readonly IHubContext<LobbyHub> _hub;

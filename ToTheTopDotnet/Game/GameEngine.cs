@@ -206,7 +206,7 @@ public class GameEngine : IHostedService, IDisposable
                 p.Platform,
                 p.Value,
                 p.TapCount,
-                rang = i + 1
+                rank = i + 1
             })
             .ToList();
 

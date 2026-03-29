@@ -24,11 +24,15 @@ public class LobbyUI : MonoBehaviour
     [SerializeField] private GameObject gamePanel;
     [SerializeField] private GameObject resultsPanel;
 
-    [Header("Join Panel")]
+    [Header("Join Panel — Create")]
     [SerializeField] private TMP_InputField lobbyNameInput;
-    [SerializeField] private TMP_InputField lobbyIdInput;
     [SerializeField] private Button createButton;
-    [SerializeField] private Button joinButton;
+
+    [Header("Join Panel — Lobby List")]
+    [SerializeField] private Transform lobbyListParent;
+    [SerializeField] private GameObject lobbyListItemPrefab;
+    [SerializeField] private Button refreshButton;
+    [SerializeField] private TextMeshProUGUI lobbyListStatus;
 
     [Header("Lobby Panel")]
     [SerializeField] private TextMeshProUGUI lobbyTitle;
@@ -63,10 +67,9 @@ public class LobbyUI : MonoBehaviour
 
     private void Start()
     {
-        // Show only join panel initially
         ShowPanel(joinPanel);
 
-        // Join panel buttons
+        // Create lobby
         createButton.onClick.AddListener(() =>
         {
             var name = lobbyNameInput.text.Trim();
@@ -74,14 +77,10 @@ public class LobbyUI : MonoBehaviour
                 lobbyManager.CreateAndJoin(name);
         });
 
-        joinButton.onClick.AddListener(() =>
-        {
-            var id = lobbyIdInput.text.Trim();
-            if (!string.IsNullOrEmpty(id))
-                lobbyManager.JoinLobby(id);
-        });
+        // Refresh lobby list
+        refreshButton.onClick.AddListener(() => StartCoroutine(FetchLobbies()));
 
-        // Lobby panel buttons
+        // Lobby panel
         readyButton.onClick.AddListener(() =>
         {
             isReady = !isReady;
@@ -89,27 +88,26 @@ public class LobbyUI : MonoBehaviour
             readyButtonText.text = isReady ? "READY!" : "Ready Up";
         });
 
-        // Game panel buttons
+        // Game panel
         tapButton.onClick.AddListener(SendTap);
 
-        // Subscribe to lobby events
+        // Subscribe to events
         lobbyManager.OnLobbyUpdated += UpdateLobbyDisplay;
         lobbyManager.OnGameStarting += HandleGameStarting;
         lobbyManager.OnError += (err) => Debug.LogError(err);
-
-        // Subscribe to game events
         lobbyManager.OnGameEvent += HandleGameEvent;
+
+        // Fetch lobbies on start
+        StartCoroutine(FetchLobbies());
     }
 
     private void Update()
     {
-        // Spacebar tap input
         if (_gameActive && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             SendTap();
         }
 
-        // Smoothly lerp all bars toward their server target values
         foreach (var (playerId, bar) in _bars)
         {
             if (_targetValues.TryGetValue(playerId, out var target))
@@ -134,6 +132,59 @@ public class LobbyUI : MonoBehaviour
     }
 
     // =====================
+    // Lobby List
+    // =====================
+
+    private IEnumerator FetchLobbies()
+    {
+        lobbyListStatus.text = "Loading...";
+
+        using var request = UnityWebRequest.Get($"{lobbyManager.ServerUrl}/api/lobby");
+        yield return request.SendWebRequest();
+
+        foreach (Transform child in lobbyListParent)
+            Destroy(child.gameObject);
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            lobbyListStatus.text = "Failed to load lobbies";
+            yield break;
+        }
+
+        // JsonUtility can't deserialize top-level arrays
+        var json = "{\"items\":" + request.downloadHandler.text + "}";
+        var lobbyList = JsonUtility.FromJson<LobbyListWrapper>(json);
+
+        if (lobbyList.items == null || lobbyList.items.Length == 0)
+        {
+            lobbyListStatus.text = "No lobbies — create one!";
+            yield break;
+        }
+
+        lobbyListStatus.text = "";
+
+        foreach (var lobby in lobbyList.items)
+        {
+            if (lobby.state == "in_game") continue;
+
+            var item = Instantiate(lobbyListItemPrefab, lobbyListParent);
+
+            var nameText = item.transform.Find("Name").GetComponent<TextMeshProUGUI>();
+            var infoText = item.transform.Find("Info").GetComponent<TextMeshProUGUI>();
+            var joinBtn = item.transform.Find("JoinButton").GetComponent<Button>();
+
+            nameText.text = lobby.name;
+            infoText.text = $"{lobby.players.Length}/{lobby.maxPlayers} players";
+
+            bool isFull = lobby.players.Length >= lobby.maxPlayers;
+            joinBtn.interactable = !isFull;
+
+            var lobbyId = lobby.id;
+            joinBtn.onClick.AddListener(() => lobbyManager.JoinLobby(lobbyId));
+        }
+    }
+
+    // =====================
     // Lobby Events
     // =====================
 
@@ -144,7 +195,6 @@ public class LobbyUI : MonoBehaviour
         lobbyTitle.text = lobby.name;
         lobbyStatus.text = $"{lobby.players.Length}/{lobby.maxPlayers} players — {lobby.state}";
 
-        // Clear and rebuild player cards
         foreach (Transform child in playerListParent)
             Destroy(child.gameObject);
 
@@ -164,7 +214,6 @@ public class LobbyUI : MonoBehaviour
     {
         lobbyStatus.text = "GAME STARTING!";
         readyButton.interactable = false;
-        // Countdown panel will take over once GameCountdown events arrive
     }
 
     // =====================
@@ -193,9 +242,7 @@ public class LobbyUI : MonoBehaviour
     private void HandleCountdown(string json)
     {
         var data = JsonUtility.FromJson<CountdownData>(json);
-
         ShowPanel(countdownPanel);
-
         int count = Mathf.CeilToInt((float)data.countdown);
         countdownText.text = count > 0 ? count.ToString() : "GO!";
     }
@@ -210,7 +257,6 @@ public class LobbyUI : MonoBehaviour
     private void HandleTick(string json)
     {
         var data = JsonUtility.FromJson<TickData>(json);
-
         timerText.text = $"{Mathf.CeilToInt(data.timeRemaining)}s";
 
         foreach (var player in data.players)
@@ -282,7 +328,6 @@ public class LobbyUI : MonoBehaviour
     {
         if (!_gameActive) return;
         if (string.IsNullOrEmpty(lobbyManager.CurrentLobbyId)) return;
-
         StartCoroutine(SendTapCoroutine());
     }
 
@@ -294,7 +339,6 @@ public class LobbyUI : MonoBehaviour
         request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
         request.downloadHandler = new DownloadHandlerBuffer();
         request.SetRequestHeader("Content-Type", "application/json");
-
         yield return request.SendWebRequest();
     }
 
@@ -353,5 +397,21 @@ public class LobbyUI : MonoBehaviour
         public float value;
         public int tapCount;
         public int rank;
+    }
+
+    [Serializable]
+    public class LobbyListItem
+    {
+        public string id;
+        public string name;
+        public PlayerData[] players;
+        public int maxPlayers;
+        public string state;
+    }
+
+    [Serializable]
+    public class LobbyListWrapper
+    {
+        public LobbyListItem[] items;
     }
 }

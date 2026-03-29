@@ -1,31 +1,39 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using System.Collections.Concurrent;
+using ToTheTopDotnet.Services;
 
 namespace ToTheTopDotnet.Hubs;
 
 public class LobbyHub : Hub
 {
-    public override async Task OnConnectedAsync()
-    {
-        Console.WriteLine($"[SignalR] Client connected: {Context.ConnectionId}");
-        await base.OnConnectedAsync();
-    }
+    // Track connection → (lobbyId, playerId)
+    private static readonly ConcurrentDictionary<string, (string lobbyId, string playerId)> Connections = new();
 
-    // clients call to join lobby's SignalR group
-    // allows broadcasting to all in lobby X without tracking connections manually
-    public async Task JoinLobbyGroup(string lobbyId)
+    public async Task JoinLobbyGroup(string lobbyId, string? playerId = null)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, lobbyId);
+
+        if (playerId != null)
+            Connections[Context.ConnectionId] = (lobbyId, playerId);
+
         Console.WriteLine($"[SignalR] {Context.ConnectionId} joined group {lobbyId}");
     }
 
     public async Task LeaveLobbyGroup(string lobbyId)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, lobbyId);
+        Connections.TryRemove(Context.ConnectionId, out _);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        Console.WriteLine($"[SignalR] Client disconnected: {Context.ConnectionId}");
+        if (Connections.TryRemove(Context.ConnectionId, out var info))
+        {
+            Console.WriteLine($"[SignalR] {info.playerId} disconnected from lobby {info.lobbyId}");
+
+            await LobbyCleanup.RemovePlayer(info.lobbyId, info.playerId, Clients, Groups);
+        }
+
         await base.OnDisconnectedAsync(exception);
     }
 }
