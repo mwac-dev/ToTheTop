@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.UI;
-using TMPro;
+using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -17,45 +16,49 @@ public class LobbyUI : MonoBehaviour
     [Header("References")]
     [SerializeField] private LobbyManager lobbyManager;
 
-    [Header("Panels")]
-    [SerializeField] private GameObject joinPanel;
-    [SerializeField] private GameObject lobbyPanel;
-    [SerializeField] private GameObject countdownPanel;
-    [SerializeField] private GameObject gamePanel;
-    [SerializeField] private GameObject resultsPanel;
-
-    [Header("Join Panel — Create")]
-    [SerializeField] private TMP_InputField lobbyNameInput;
-    [SerializeField] private Button createButton;
-
-    [Header("Join Panel — Lobby List")]
-    [SerializeField] private Transform lobbyListParent;
-    [SerializeField] private GameObject lobbyListItemPrefab;
-    [SerializeField] private Button refreshButton;
-    [SerializeField] private TextMeshProUGUI lobbyListStatus;
-
-    [Header("Lobby Panel")]
-    [SerializeField] private TextMeshProUGUI lobbyTitle;
-    [SerializeField] private TextMeshProUGUI lobbyStatus;
-    [SerializeField] private Transform playerListParent;
-    [SerializeField] private GameObject playerCardPrefab;
-    [SerializeField] private Button readyButton;
-    [SerializeField] private TextMeshProUGUI readyButtonText;
-
-    [Header("Countdown Panel")]
-    [SerializeField] private TextMeshProUGUI countdownText;
-
-    [Header("Game Panel")]
-    [SerializeField] private Transform barsContainer;
-    [SerializeField] private GameObject playerBarPrefab;
-    [SerializeField] private TextMeshProUGUI timerText;
-    [SerializeField] private Button tapButton;
-
-    [Header("Results Panel")]
-    [SerializeField] private TextMeshProUGUI resultsText;
+    [Header("UI Toolkit")]
+    [SerializeField] private UIDocument uiDocument;
+    [SerializeField] private VisualTreeAsset lobbyListItemTemplate;
+    [SerializeField] private VisualTreeAsset playerCardTemplate;
+    [SerializeField] private VisualTreeAsset playerBarTemplate;
 
     [Header("Game Settings")]
     [SerializeField] private float lerpSpeed = 10f;
+
+    // Panels
+    private VisualElement _joinPanel;
+    private VisualElement _lobbyPanel;
+    private VisualElement _countdownPanel;
+    private VisualElement _gamePanel;
+    private VisualElement _resultsPanel;
+    private VisualElement[] _allPanels;
+
+    // Join panel elements
+    private TextField _lobbyNameInput;
+    private Button _createButton;
+    private ScrollView _lobbyListScroll;
+    private Button _refreshButton;
+    private Label _lobbyListStatus;
+
+    // Lobby panel elements
+    private Label _lobbyTitle;
+    private Label _lobbyStatus;
+    private VisualElement _playerList;
+    private Button _readyButton;
+    private Button _leaveButton;
+
+    // Countdown panel elements
+    private Label _countdownText;
+
+    // Game panel elements
+    private VisualElement _barsContainer;
+    private Label _timerText;
+    private Button _tapButton;
+
+    // Results panel elements
+    private Label _resultsText;
+    private Button _playAgainButton;
+    private Button _quitButton;
 
     // Lobby state
     private bool isReady;
@@ -67,29 +70,80 @@ public class LobbyUI : MonoBehaviour
 
     private void Start()
     {
-        ShowPanel(joinPanel);
+        var root = uiDocument.rootVisualElement;
+
+        // Query panels
+        _joinPanel = root.Q("join-panel");
+        _lobbyPanel = root.Q("lobby-panel");
+        _countdownPanel = root.Q("countdown-panel");
+        _gamePanel = root.Q("game-panel");
+        _resultsPanel = root.Q("results-panel");
+        _allPanels = new[] { _joinPanel, _lobbyPanel, _countdownPanel, _gamePanel, _resultsPanel };
+
+        // Query join panel
+        _lobbyNameInput = root.Q<TextField>("lobby-name-input");
+        _createButton = root.Q<Button>("create-button");
+        _lobbyListScroll = root.Q<ScrollView>("lobby-list-scroll");
+        _refreshButton = root.Q<Button>("refresh-button");
+        _lobbyListStatus = root.Q<Label>("lobby-list-status");
+
+        // Query lobby panel
+        _lobbyTitle = root.Q<Label>("lobby-title");
+        _lobbyStatus = root.Q<Label>("lobby-status");
+        _playerList = root.Q("player-list");
+        _readyButton = root.Q<Button>("ready-button");
+        _leaveButton = root.Q<Button>("leave-button");
+
+        // Query countdown panel
+        _countdownText = root.Q<Label>("countdown-text");
+
+        // Query game panel
+        _barsContainer = root.Q("bars-container");
+        _timerText = root.Q<Label>("timer-text");
+        _tapButton = root.Q<Button>("tap-button");
+
+        // Query results panel
+        _resultsText = root.Q<Label>("results-text");
+        _playAgainButton = root.Q<Button>("play-again-button");
+        _quitButton = root.Q<Button>("quit-button");
+
+        ShowPanel(_joinPanel);
 
         // Create lobby
-        createButton.onClick.AddListener(() =>
+        _createButton.clicked += () =>
         {
-            var name = lobbyNameInput.text.Trim();
+            var name = _lobbyNameInput.value.Trim();
             if (!string.IsNullOrEmpty(name))
                 lobbyManager.CreateAndJoin(name);
-        });
+        };
 
         // Refresh lobby list
-        refreshButton.onClick.AddListener(() => StartCoroutine(FetchLobbies()));
+        _refreshButton.clicked += () => StartCoroutine(FetchLobbies());
 
         // Lobby panel
-        readyButton.onClick.AddListener(() =>
+        _readyButton.clicked += () =>
         {
             isReady = !isReady;
             lobbyManager.SetReady(isReady);
-            readyButtonText.text = isReady ? "READY!" : "Ready Up";
-        });
+            _readyButton.text = isReady ? "READY!" : "Ready Up";
+        };
+
+        // Leave lobby
+        _leaveButton.clicked += LeaveLobby;
+
+        // Results panel
+        _playAgainButton.clicked += LeaveLobby;
+        _quitButton.clicked += () =>
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        };
 
         // Game panel
-        tapButton.onClick.AddListener(SendTap);
+        _tapButton.clicked += SendTap;
 
         // Subscribe to events
         lobbyManager.OnLobbyUpdated += UpdateLobbyDisplay;
@@ -122,13 +176,10 @@ public class LobbyUI : MonoBehaviour
     // Panel Management
     // =====================
 
-    private void ShowPanel(GameObject panel)
+    private void ShowPanel(VisualElement panel)
     {
-        joinPanel.SetActive(panel == joinPanel);
-        lobbyPanel.SetActive(panel == lobbyPanel);
-        countdownPanel.SetActive(panel == countdownPanel);
-        gamePanel.SetActive(panel == gamePanel);
-        resultsPanel.SetActive(panel == resultsPanel);
+        foreach (var p in _allPanels)
+            p.style.display = p == panel ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     // =====================
@@ -137,17 +188,16 @@ public class LobbyUI : MonoBehaviour
 
     private IEnumerator FetchLobbies()
     {
-        lobbyListStatus.text = "Loading...";
+        _lobbyListStatus.text = "Loading...";
 
         using var request = UnityWebRequest.Get($"{lobbyManager.ServerUrl}/api/lobby");
         yield return request.SendWebRequest();
 
-        foreach (Transform child in lobbyListParent)
-            Destroy(child.gameObject);
+        _lobbyListScroll.Clear();
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            lobbyListStatus.text = "Failed to load lobbies";
+            _lobbyListStatus.text = "Failed to load lobbies";
             yield break;
         }
 
@@ -157,30 +207,32 @@ public class LobbyUI : MonoBehaviour
 
         if (lobbyList.items == null || lobbyList.items.Length == 0)
         {
-            lobbyListStatus.text = "No lobbies — create one!";
+            _lobbyListStatus.text = "No lobbies — create one!";
             yield break;
         }
 
-        lobbyListStatus.text = "";
+        _lobbyListStatus.text = "";
 
         foreach (var lobby in lobbyList.items)
         {
             if (lobby.state == "in_game") continue;
 
-            var item = Instantiate(lobbyListItemPrefab, lobbyListParent);
+            var item = lobbyListItemTemplate.Instantiate();
 
-            var nameText = item.transform.Find("Name").GetComponent<TextMeshProUGUI>();
-            var infoText = item.transform.Find("Info").GetComponent<TextMeshProUGUI>();
-            var joinBtn = item.transform.Find("JoinButton").GetComponent<Button>();
+            var nameText = item.Q<Label>("Name");
+            var infoText = item.Q<Label>("Info");
+            var joinBtn = item.Q<Button>("JoinButton");
 
             nameText.text = lobby.name;
             infoText.text = $"{lobby.players.Length}/{lobby.maxPlayers} players";
 
             bool isFull = lobby.players.Length >= lobby.maxPlayers;
-            joinBtn.interactable = !isFull;
+            joinBtn.SetEnabled(!isFull);
 
             var lobbyId = lobby.id;
-            joinBtn.onClick.AddListener(() => lobbyManager.JoinLobby(lobbyId));
+            joinBtn.clicked += () => lobbyManager.JoinLobby(lobbyId);
+
+            _lobbyListScroll.Add(item);
         }
     }
 
@@ -190,30 +242,34 @@ public class LobbyUI : MonoBehaviour
 
     private void UpdateLobbyDisplay(LobbyData lobby)
     {
-        ShowPanel(lobbyPanel);
+        ShowPanel(_lobbyPanel);
 
-        lobbyTitle.text = lobby.name;
-        lobbyStatus.text = $"{lobby.players.Length}/{lobby.maxPlayers} players — {lobby.state}";
+        _lobbyTitle.text = lobby.name;
+        _lobbyStatus.text = $"{lobby.players.Length}/{lobby.maxPlayers} players — {lobby.state}";
 
-        foreach (Transform child in playerListParent)
-            Destroy(child.gameObject);
+        _playerList.Clear();
 
         foreach (var player in lobby.players)
         {
-            var card = Instantiate(playerCardPrefab, playerListParent);
-            var nameText = card.transform.Find("Name").GetComponent<TextMeshProUGUI>();
-            var statusText = card.transform.Find("Status").GetComponent<TextMeshProUGUI>();
+            var card = playerCardTemplate.Instantiate();
+            var nameText = card.Q<Label>("Name");
+            var statusText = card.Q<Label>("Status");
 
             nameText.text = player.name;
             statusText.text = player.isReady ? "READY" : "Waiting...";
-            statusText.color = player.isReady ? Color.green : Color.gray;
+
+            statusText.RemoveFromClassList("player-card__status--ready");
+            if (player.isReady)
+                statusText.AddToClassList("player-card__status--ready");
+
+            _playerList.Add(card);
         }
     }
 
     private void HandleGameStarting()
     {
-        lobbyStatus.text = "GAME STARTING!";
-        readyButton.interactable = false;
+        _lobbyStatus.text = "GAME STARTING!";
+        _readyButton.SetEnabled(false);
     }
 
     // =====================
@@ -242,14 +298,14 @@ public class LobbyUI : MonoBehaviour
     private void HandleCountdown(string json)
     {
         var data = JsonUtility.FromJson<CountdownData>(json);
-        ShowPanel(countdownPanel);
+        ShowPanel(_countdownPanel);
         int count = Mathf.CeilToInt((float)data.countdown);
-        countdownText.text = count > 0 ? count.ToString() : "GO!";
+        _countdownText.text = count > 0 ? count.ToString() : "GO!";
     }
 
     private void HandleGamePlaying(string json)
     {
-        ShowPanel(gamePanel);
+        ShowPanel(_gamePanel);
         _gameActive = true;
         CreatePlayerBars();
     }
@@ -257,7 +313,7 @@ public class LobbyUI : MonoBehaviour
     private void HandleTick(string json)
     {
         var data = JsonUtility.FromJson<TickData>(json);
-        timerText.text = $"{Mathf.CeilToInt(data.timeRemaining)}s";
+        _timerText.text = $"{Mathf.CeilToInt(data.timeRemaining)}s";
 
         foreach (var player in data.players)
         {
@@ -274,7 +330,7 @@ public class LobbyUI : MonoBehaviour
     private void HandleGameOver(string json)
     {
         _gameActive = false;
-        ShowPanel(resultsPanel);
+        ShowPanel(_resultsPanel);
 
         var data = JsonUtility.FromJson<GameOverData>(json);
 
@@ -289,7 +345,7 @@ public class LobbyUI : MonoBehaviour
             sb.AppendLine($"#{result.rank}  {platform} {result.name} — {result.tapCount} taps{crown}");
         }
 
-        resultsText.text = sb.ToString();
+        _resultsText.text = sb.ToString();
     }
 
     // =====================
@@ -298,8 +354,7 @@ public class LobbyUI : MonoBehaviour
 
     private void CreatePlayerBars()
     {
-        foreach (Transform child in barsContainer)
-            Destroy(child.gameObject);
+        _barsContainer.Clear();
         _bars.Clear();
         _targetValues.Clear();
 
@@ -307,17 +362,31 @@ public class LobbyUI : MonoBehaviour
 
         foreach (var player in lobbyManager.CurrentLobby.players)
         {
-            var barObj = Instantiate(playerBarPrefab, barsContainer);
-            var barUI = barObj.GetComponent<PlayerBarUI>();
+            var barElement = playerBarTemplate.Instantiate();
+            bool isLocal = player.id == lobbyManager.PlayerId;
+            var barUI = new PlayerBarUI(barElement, player.name, player.id, isLocal);
 
-            if (barUI != null)
-            {
-                bool isLocal = player.id == lobbyManager.PlayerId;
-                barUI.Setup(player.name, player.id, isLocal);
-                _bars[player.id] = barUI;
-                _targetValues[player.id] = 0f;
-            }
+            _barsContainer.Add(barElement);
+            _bars[player.id] = barUI;
+            _targetValues[player.id] = 0f;
         }
+    }
+
+    // =====================
+    // Leave Lobby
+    // =====================
+
+    private void LeaveLobby()
+    {
+        lobbyManager.LeaveLobby();
+        _gameActive = false;
+        _bars.Clear();
+        _targetValues.Clear();
+        isReady = false;
+        _readyButton.text = "Ready Up";
+        _readyButton.SetEnabled(true);
+        ShowPanel(_joinPanel);
+        StartCoroutine(FetchLobbies());
     }
 
     // =====================

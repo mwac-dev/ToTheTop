@@ -1,84 +1,62 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
+using UnityEngine.UIElements;
 
 /// <summary>
-/// UI component for a single player's vertical bar.
+/// UI component for a single player's bar. Plain C# class wrapping a VisualElement.
 /// </summary>
-public class PlayerBarUI : MonoBehaviour
+public class PlayerBarUI
 {
-    [Header("UI References")]
-    [SerializeField] private TextMeshProUGUI nameLabel;
-    [SerializeField] private Image barFill;
-    [SerializeField] private Image barBackground;
-    [SerializeField] private TextMeshProUGUI platformIcon;
-    [SerializeField] private TextMeshProUGUI tapCountLabel;
-
-    [Header("Colors")]
-    [SerializeField] private Color localPlayerColor = new Color(0.2f, 0.8f, 0.4f);   // green
-    [SerializeField] private Color otherPlayerColor = new Color(0.3f, 0.5f, 0.9f);    // blue
-    [SerializeField] private Color localHighlightBg = new Color(0.15f, 0.25f, 0.15f); // subtle green bg
+    private readonly VisualElement _root;
+    private readonly Label _nameLabel;
+    private readonly VisualElement _fill;
+    private readonly Label _platformIcon;
+    private readonly Label _tapCountLabel;
 
     public float CurrentValue { get; set; }
 
-    private string _playerId;
-    private bool _isLocal;
-
-    /// <summary>
-    /// Initialize the bar with player info.
-    /// </summary>
-    public void Setup(string playerName, string playerId, bool isLocal)
+    public PlayerBarUI(VisualElement root, string playerName, string playerId, bool isLocal)
     {
-        _playerId = playerId;
-        _isLocal = isLocal;
+        _root = root;
+        _nameLabel = root.Q<Label>("nameLabel");
+        _fill = root.Q("fill");
+        _platformIcon = root.Q<Label>("platformIcon");
+        _tapCountLabel = root.Q<Label>("tapCount");
 
-        nameLabel.text = playerName;
-        barFill.fillAmount = 0f;
         CurrentValue = 0f;
+        UpdateFill(0f);
 
-        barFill.color = isLocal ? localPlayerColor : otherPlayerColor;
+        // Color via USS class
+        _fill.AddToClassList(isLocal ? "player-bar__fill--local" : "player-bar__fill--other");
 
-        // Highlight local player's bar background
-        if (isLocal && barBackground != null)
-        {
-            barBackground.color = localHighlightBg;
-        }
-
-        // Show "YOU" indicator for local player
         if (isLocal)
         {
-            nameLabel.text = $"{playerName} (YOU)";
-            nameLabel.fontStyle = FontStyles.Bold;
+            _root.Q(className: "player-bar").AddToClassList("player-bar--local");
+            _nameLabel.text = $"{playerName} (YOU)";
+            _nameLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        }
+        else
+        {
+            _nameLabel.text = playerName;
         }
 
-        if (tapCountLabel != null)
-            tapCountLabel.text = "0 taps";
+        if (_tapCountLabel != null)
+            _tapCountLabel.text = "0 taps";
     }
 
-    /// <summary>
-    /// Set the platform icon text.
-    /// Called when we receive platform info from the server.
-    /// </summary>
     public void SetPlatform(string platform)
     {
-        if (platformIcon != null)
-            platformIcon.text = platform == "browser" ? "[WEB]" : "[PC]";
+        if (_platformIcon != null)
+            _platformIcon.text = platform == "browser" ? "[WEB]" : "[PC]";
     }
 
-    /// <summary>
-    /// Update the visual fill of the bar. Value is 0-1.
-    /// </summary>
     public void UpdateFill(float normalizedValue)
     {
-        barFill.fillAmount = Mathf.Clamp01(normalizedValue);
+        _fill.style.height = Length.Percent(Mathf.Clamp01(normalizedValue) * 100f);
     }
 
-    /// <summary>
-    /// Update the tap count display.
-    /// </summary>
     public void SetTapCount(int count)
     {
-        if (tapCountLabel != null)
-            tapCountLabel.text = $"{count} taps";
+        if (_tapCountLabel != null)
+            _tapCountLabel.text = $"{count} taps";
     }
 }

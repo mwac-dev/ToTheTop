@@ -154,6 +154,12 @@ public class LobbyManager : MonoBehaviour
                 _pendingLobbyUpdate = data.lobby;
             });
 
+            _hub.On<LobbyEventData>("PlayerLeft", data =>
+            {
+                Debug.Log($"[SignalR] PlayerLeft: player={data.playerId}, players={data.lobby?.players?.Length}");
+                _pendingLobbyUpdate = data.lobby;
+            });
+
             _hub.On<LobbyEventData>("PlayerReady", data =>
             {
                 Debug.Log($"[SignalR] PlayerReady: {data.playerId} = {data.isReady}");
@@ -286,8 +292,7 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    // CLEANUP
-    private async void OnDestroy()
+    public async void LeaveLobby()
     {
         if (_hub != null)
         {
@@ -300,8 +305,30 @@ public class LobbyManager : MonoBehaviour
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[SignalR] Cleanup error: {ex.Message}");
+                Debug.LogWarning($"[SignalR] Leave error: {ex.Message}");
             }
+            _hub = null;
+        }
+        CurrentLobbyId = null;
+        PlayerId = null;
+        CurrentLobby = null;
+    }
+
+    // CLEANUP
+    private async void OnDestroy()
+    {
+        if (_hub == null) return;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(CurrentLobbyId))
+                await _hub.InvokeAsync("LeaveLobbyGroup", CurrentLobbyId);
+            await _hub.StopAsync();
+            await _hub.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[SignalR] Cleanup error: {ex.Message}");
         }
 
         CurrentLobbyId = null;

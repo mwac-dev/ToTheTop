@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="lobby-list-item">
+        <ui:Label name="Name" class="lobby-list-item__name" />
+        <ui:Label name="Info" class="lobby-list-item__info" />
+        <ui:Button name="JoinButton" text="Join" class="btn lobby-list-item__join-btn" />
+    </ui:VisualElement>
+</ui:UXML>

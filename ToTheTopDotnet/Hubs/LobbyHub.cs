@@ -21,8 +21,11 @@ public class LobbyHub : Hub
 
     public async Task LeaveLobbyGroup(string lobbyId)
     {
+        if (Connections.TryRemove(Context.ConnectionId, out var info))
+        {
+            await LobbyCleanup.RemovePlayer(info.lobbyId, info.playerId, Clients, Groups);
+        }
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, lobbyId);
-        Connections.TryRemove(Context.ConnectionId, out _);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

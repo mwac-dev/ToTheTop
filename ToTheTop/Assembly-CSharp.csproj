@@ -82,12 +82,15 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile-2-Pass.shader" />
     <None Include="Assets\Packages\System.Diagnostics.DiagnosticSource.10.0.5\useSharedDesignerContext.txt" />
+    <None Include="Assets\UI\LobbyStyles.uss" />
+    <None Include="Assets\UI\LobbyMain.uxml" />
     <None Include="Assets\Packages\System.Text.Encodings.Web.10.0.5\lib\netstandard2.0\System.Text.Encodings.Web.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.Logging.10.0.5\useSharedDesignerContext.txt" />
     <None Include="Assets\Packages\System.Text.Encodings.Web.10.0.5\useSharedDesignerContext.txt" />
     <None Include="Assets\Packages\Microsoft.AspNetCore.SignalR.Client.10.0.5\lib\netstandard2.0\Microsoft.AspNetCore.SignalR.Client.xml" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.10.0.5\useSharedDesignerContext.txt" />
+    <None Include="Assets\UI\PlayerBar.uxml" />
     <None Include="Assets\Packages\Microsoft.AspNetCore.SignalR.Client.Core.10.0.5\lib\netstandard2.1\Microsoft.AspNetCore.SignalR.Client.Core.xml" />
     <None Include="Assets\Packages\Microsoft.AspNetCore.Http.Connections.Common.10.0.5\lib\netstandard2.0\Microsoft.AspNetCore.Http.Connections.Common.xml" />
     <None Include="Assets\Packages\Microsoft.AspNetCore.SignalR.Protocols.Json.10.0.5\lib\netstandard2.0\Microsoft.AspNetCore.SignalR.Protocols.Json.xml" />
@@ -132,9 +135,11 @@
     <None Include="Assets\Packages\System.Text.Json.10.0.5\useSharedDesignerContext.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\Packages\System.IO.Pipelines.10.0.5\useSharedDesignerContext.txt" />
+    <None Include="Assets\UI\LobbyListItem.uxml" />
     <None Include="Assets\Packages\Microsoft.AspNetCore.Http.Connections.Client.10.0.5\lib\netstandard2.1\Microsoft.AspNetCore.Http.Connections.Client.xml" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Mobile.shader" />
+    <None Include="Assets\UI\PlayerCard.uxml" />
     <None Include="Assets\Packages\System.IO.Pipelines.10.0.5\lib\netstandard2.0\System.IO.Pipelines.xml" />
     <None Include="Assets\TextMesh Pro\Fonts\LiberationSans - OFL.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile.shader" />

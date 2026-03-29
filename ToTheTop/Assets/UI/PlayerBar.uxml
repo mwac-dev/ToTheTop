@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="player-bar">
+        <ui:Label name="nameLabel" class="player-bar__name" />
+        <ui:Label name="platformIcon" class="player-bar__platform" />
+        <ui:VisualElement class="player-bar__track">
+            <ui:VisualElement name="fill" class="player-bar__fill" />
+        </ui:VisualElement>
+        <ui:Label name="tapCount" class="player-bar__taps" />
+    </ui:VisualElement>
+</ui:UXML>

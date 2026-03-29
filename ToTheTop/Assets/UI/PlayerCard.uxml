@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="player-card">
+        <ui:Label name="Name" class="player-card__name" />
+        <ui:Label name="Status" class="player-card__status" />
+    </ui:VisualElement>
+</ui:UXML>
