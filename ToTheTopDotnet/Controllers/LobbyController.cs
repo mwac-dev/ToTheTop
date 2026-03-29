@@ -1,10 +1,11 @@
-﻿using LobbyServer.Hubs;
-using LobbyServer.Models;
-using LobbyServer.Services;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using ToTheTopDotnet.Game;
+using ToTheTopDotnet.Hubs;
+using ToTheTopDotnet.Models;
+using ToTheTopDotnet.Services;
 
-namespace LobbyServer.Controllers;
+namespace ToTheTopDotnet.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -15,11 +16,13 @@ public class LobbyController : ControllerBase
 
     private readonly RabbitMqService _rabbit;
     private readonly IHubContext<LobbyHub> _hub;
+    private readonly GameEngine _gameEngine;
 
-    public LobbyController(RabbitMqService rabbit, IHubContext<LobbyHub> hub)
+    public LobbyController(RabbitMqService rabbit, IHubContext<LobbyHub> hub, GameEngine gameEngine)
     {
         _rabbit = rabbit;
         _hub = hub;
+        _gameEngine = gameEngine;
     }
 
 
@@ -116,6 +119,8 @@ public class LobbyController : ControllerBase
         if (lobby.AllReady)
         {
             lobby.State = "in_game";
+            
+            _gameEngine.StartGame(id, lobby.Players.Select(p => (p.Id, p.Name, "desktop")));
 
             await _rabbit.PublishAsync("lobby.game.starting", new
             {

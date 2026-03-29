@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.AspNetCore.SignalR.Client;
 using UnityEngine;
@@ -10,6 +11,7 @@ public class LobbyManager : MonoBehaviour
 {
     [Header("Server Config")] [SerializeField]
     private string serverUrl = "http://localhost:5082";
+    public string ServerUrl => serverUrl;
 
     [Header("Player Config")] [SerializeField]
     private string playerName = "UnityPlayer";
@@ -24,6 +26,7 @@ public class LobbyManager : MonoBehaviour
     public event Action<string> OnError;
     public event Action OnGameStarting;
     public event Action<string> OnConnectionStatusChanged;
+     public event Action<string, string> OnGameEvent; // (eventType, jsonData)
 
     private HubConnection _hub;
 
@@ -126,6 +129,7 @@ public class LobbyManager : MonoBehaviour
     private volatile LobbyData _pendingLobbyUpdate;
     private volatile bool _gameStarting;
     private volatile string _pendingStatus;
+    private readonly ConcurrentQueue<(string type, string json)> _pendingGameEvents = new();
 
     // SignalR
     private async void ConnectSignalR(string lobbyId)
@@ -159,6 +163,33 @@ public class LobbyManager : MonoBehaviour
                 Debug.Log("[SignalR] Game starting!");
                 _pendingLobbyUpdate = data.lobby;
                 _gameStarting = true;
+            });
+            
+             _hub.On<object>("GameCountdown", data =>
+            {
+                var json = data.ToString();
+                Debug.Log($"[SignalR] GameCountdown: {json}");
+                _pendingGameEvents.Enqueue(("GameCountdown", json));
+            });
+ 
+            _hub.On<object>("GamePlaying", data =>
+            {
+                var json = data.ToString();
+                Debug.Log($"[SignalR] GamePlaying: {json}");
+                _pendingGameEvents.Enqueue(("GamePlaying", json));
+            });
+ 
+            _hub.On<object>("GameTick", data =>
+            {
+                var json = data.ToString();
+                _pendingGameEvents.Enqueue(("GameTick", json));
+            });
+ 
+            _hub.On<object>("GameOver", data =>
+            {
+                var json = data.ToString();
+                Debug.Log($"[SignalR] GameOver: {json}");
+                _pendingGameEvents.Enqueue(("GameOver", json));
             });
 
             _hub.Reconnecting += (ex) =>
@@ -223,6 +254,11 @@ public class LobbyManager : MonoBehaviour
         {
             _gameStarting = false;
             OnGameStarting?.Invoke();
+        }
+        
+        while (_pendingGameEvents.TryDequeue(out var gameEvent))
+        {
+            OnGameEvent?.Invoke(gameEvent.type, gameEvent.json);
         }
     }
 

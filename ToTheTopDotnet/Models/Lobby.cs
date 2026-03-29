@@ -1,4 +1,4 @@
-﻿namespace LobbyServer.Models;
+﻿namespace ToTheTopDotnet.Models;
 
 public class Player
 {

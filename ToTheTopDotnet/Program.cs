@@ -1,5 +1,6 @@
-using LobbyServer.Hubs;
-using LobbyServer.Services;
+using ToTheTopDotnet.Game;
+using ToTheTopDotnet.Hubs;
+using ToTheTopDotnet.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,11 @@ builder.Services.AddSignalR();
 // rabbitmq as singleton
 var rabbit = await RabbitMqService.CreateAsync();
 builder.Services.AddSingleton(rabbit);
+
+// for injection
+builder.Services.AddSingleton<GameEngine>();
+// for tick loop
+builder.Services.AddHostedService(provider => provider.GetRequiredService<GameEngine>());
 
 // CORS
 builder.Services.AddCors(options =>

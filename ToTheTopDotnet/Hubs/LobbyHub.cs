@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace LobbyServer.Hubs;
+namespace ToTheTopDotnet.Hubs;
 
 public class LobbyHub : Hub
 {

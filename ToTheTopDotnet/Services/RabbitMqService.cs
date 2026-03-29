@@ -2,7 +2,7 @@
 using System.Text.Json;
 using RabbitMQ.Client;
 
-namespace LobbyServer.Services;
+namespace ToTheTopDotnet.Services;
 
 public class RabbitMqService : IDisposable
 {
