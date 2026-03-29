@@ -67,7 +67,7 @@ public class LobbyController : ControllerBase
             return NotFound(new { error = "Lobby not found" });
         if (lobby.IsFull)
             return BadRequest(new { error = "Lobby is full" });
-        var player = new Player { Name = request.PlayerName };
+        var player = new Player { Name = request.PlayerName, Platform = request.Platform };
         lobby.Players.Add(player);
 
 
@@ -120,7 +120,7 @@ public class LobbyController : ControllerBase
         {
             lobby.State = "in_game";
             
-            _gameEngine.StartGame(id, lobby.Players.Select(p => (p.Id, p.Name, "desktop")));
+            _gameEngine.StartGame(id, lobby.Players.Select(p => (p.Id, p.Name, p.Platform)));
 
             await _rabbit.PublishAsync("lobby.game.starting", new
             {
@@ -138,6 +138,6 @@ public class LobbyController : ControllerBase
 
 public record CreateLobbyRequest(string Name, int MaxPlayers = 4);
 
-public record JoinRequest(string PlayerName);
+public record JoinRequest(string PlayerName, string Platform = "desktop");
 
 public record ReadyRequest(string PlayerId, bool IsReady);

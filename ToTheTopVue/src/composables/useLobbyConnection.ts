@@ -1,45 +1,37 @@
 import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr"
-import { onMounted, onUnmounted, ref } from "vue"
+import { onMounted, onUnmounted, ref, shallowRef, triggerRef } from "vue"
+import type { Lobby, Player, GamePhase, GameState, GameOverData } from "@/types"
 
-// types to be received from server
-export interface Player {
-    id: string
-    name: string
-    isReady: boolean
-    joinedAt: string
-}
-
-export interface Lobby {
-    id: string
-    name: string
-    players: Player[]
-    maxPlayers: number
-    state: string
-}
+const API_BASE = 'http://localhost:5082'
 
 export function useLobbyConnection(lobbyId: string) {
-    // reactive state for lobby data and connection status
     const lobby = ref<Lobby | null>(null)
     const connectionStatus = ref<string>('disconnected')
-    const events = ref<Array<{ type: string; data: AnalyserNode; time: Date }>>([])
+    const events = ref<Array<{ type: string; data: any; time: Date }>>([])
+
+    // Game state
+    const gamePhase = ref<GamePhase>('lobby')
+    const gameState = shallowRef<GameState | null>(null)
+    const countdown = ref<number>(0)
+    const gameResults = ref<GameOverData | null>(null)
+    const playerId = ref<string | null>(null)
+    const isReady = ref<boolean>(false)
 
     let connection: HubConnection | null = null
 
     function addEvent(type: string, data: any) {
         events.value.unshift({ type, data, time: new Date() })
-        if (events.value.length > 50) events.value.pop() // keep only the latest 50 events
+        if (events.value.length > 50) events.value.pop()
     }
 
     async function connect() {
-        // building the SignalR connection
         connection = new HubConnectionBuilder()
-            .withUrl('http://localhost:5082/hub/lobby')
+            .withUrl(`${API_BASE}/hub/lobby`)
             .withAutomaticReconnect()
             .configureLogging(LogLevel.Information)
             .build()
 
-        // register handlers for server-sent events
-        // matching the SendAsync calls in the C# LobbyHub
+        // Lobby handlers
         connection.on('PlayerJoined', (data: { player: Player; lobby: Lobby }) => {
             lobby.value = data.lobby
             addEvent('PlayerJoined', data.player)
@@ -50,26 +42,62 @@ export function useLobbyConnection(lobbyId: string) {
             addEvent('PlayerReady', { playerId: data.playerId, isReady: data.isReady })
         })
 
+        connection.on('PlayerLeft', (data: { playerId: string; lobby: Lobby }) => {
+            lobby.value = data.lobby
+            addEvent('PlayerLeft', { playerId: data.playerId })
+        })
+
         connection.on('GameStarting', (data: { lobby: Lobby }) => {
             lobby.value = data.lobby
             addEvent('GameStarting', { players: data.lobby.players })
         })
 
+        // Game handlers
+        connection.on('GameCountdown', (data: { countdown: number }) => {
+            gamePhase.value = 'countdown'
+            countdown.value = data.countdown
+        })
+
+        connection.on('GamePlaying', (data: { duration: number }) => {
+            gamePhase.value = 'playing'
+            addEvent('GamePlaying', data)
+        })
+
+        connection.on('GameTick', (data: { players: GameState['players']; timeRemaining: number }) => {
+            gameState.value = { players: data.players, timeRemaining: data.timeRemaining }
+            triggerRef(gameState)
+        })
+
+        connection.on('GameOver', (data: GameOverData) => {
+            gamePhase.value = 'results'
+            gameResults.value = data
+            addEvent('GameOver', { winnerId: data.winnerId, reason: data.reason })
+        })
+
+        // Connection lifecycle
         connection.onreconnecting(() => { connectionStatus.value = 'reconnecting' })
-        connection.onreconnected(() => { connectionStatus.value = 'connected' })
+        connection.onreconnected(async () => {
+            connectionStatus.value = 'connected'
+            if (connection) {
+                await connection.invoke('JoinLobbyGroup', lobbyId, playerId.value)
+            }
+        })
         connection.onclose(() => { connectionStatus.value = 'disconnected' })
 
         try {
             await connection.start()
             connectionStatus.value = 'connected'
 
-            // join signalR group for the lobby so that events are only received for *this* lobby
-            await connection.invoke('JoinLobbyGroup', lobbyId)
+            await connection.invoke('JoinLobbyGroup', lobbyId, playerId.value)
 
-            // fetch initial state after connecting
-            const res = await fetch(`http://localhost:5082/api/lobby/${lobbyId}`)
+            const res = await fetch(`${API_BASE}/api/lobby/${lobbyId}`)
             if (res.ok) {
                 lobby.value = await res.json()
+
+                // Mid-game spectator: bootstrap game state if lobby is in_game
+                if (lobby.value?.state === 'in_game') {
+                    await fetchGameState()
+                }
             }
         } catch (err) {
             connectionStatus.value = 'error'
@@ -79,13 +107,90 @@ export function useLobbyConnection(lobbyId: string) {
 
     async function disconnect() {
         if (connection?.state === HubConnectionState.Connected) {
-            await connection.invoke('LeaveLobbyGroup', lobbyId)
+            await connection.invoke('LeaveLobbyGroup', lobbyId, playerId.value)
             await connection.stop()
         }
+    }
+
+    // Actions
+    async function joinLobby(playerName: string) {
+        const res = await fetch(`${API_BASE}/api/lobby/${lobbyId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerName, platform: 'browser' })
+        })
+        if (res.ok) {
+            const data = await res.json()
+            playerId.value = data.playerId
+            lobby.value = data.lobby
+
+            // Re-join SignalR group with playerId so backend tracks the connection
+            if (connection?.state === HubConnectionState.Connected) {
+                await connection.invoke('JoinLobbyGroup', lobbyId, playerId.value)
+            }
+        }
+    }
+
+    async function setReady(ready: boolean) {
+        isReady.value = ready
+        await fetch(`${API_BASE}/api/lobby/${lobbyId}/ready`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: playerId.value, isReady: ready })
+        })
+    }
+
+    function sendTap() {
+        fetch(`${API_BASE}/api/game/${lobbyId}/tap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: playerId.value })
+        })
+    }
+
+    async function fetchGameState() {
+        const res = await fetch(`${API_BASE}/api/game/${lobbyId}`)
+        if (res.ok) {
+            const data = await res.json()
+            gameState.value = { players: data.players, timeRemaining: data.timeRemaining }
+            triggerRef(gameState)
+
+            if (data.state === 'countdown') {
+                gamePhase.value = 'countdown'
+            } else if (data.state === 'playing') {
+                gamePhase.value = 'playing'
+            } else if (data.state === 'finished') {
+                gamePhase.value = 'results'
+            }
+        }
+    }
+
+    function resetToLobby() {
+        gamePhase.value = 'lobby'
+        gameState.value = null
+        gameResults.value = null
+        countdown.value = 0
+        isReady.value = false
+        playerId.value = null
     }
 
     onMounted(connect)
     onUnmounted(disconnect)
 
-    return { lobby, connectionStatus, events }
+    return {
+        lobby,
+        connectionStatus,
+        events,
+        gamePhase,
+        gameState,
+        countdown,
+        gameResults,
+        playerId,
+        isReady,
+        joinLobby,
+        setReady,
+        sendTap,
+        fetchGameState,
+        resetToLobby,
+    }
 }

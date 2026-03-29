@@ -6,6 +6,7 @@ public class Player
 
     public string Name { get; set; } = "";
     public bool IsReady { get; set; }
+    public string Platform { get; set; } = "desktop";
     public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
 }
 
