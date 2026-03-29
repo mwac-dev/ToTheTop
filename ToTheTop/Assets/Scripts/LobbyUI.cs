@@ -502,6 +502,9 @@ public class LobbyUI : MonoBehaviour
         _readyButton.text = "READY UP";
         _readyButton.SetEnabled(true);
         ShowPanel(_lobbyPanel);
+
+        if (lobbyManager.CurrentLobby != null)
+            UpdateLobbyDisplay(lobbyManager.CurrentLobby);
     }
 
     private void LeaveLobby()
