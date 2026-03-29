@@ -74,6 +74,12 @@ export function useLobbyConnection(lobbyId: string) {
             addEvent('GameOver', { winnerId: data.winnerId, reason: data.reason })
         })
 
+        connection.on('LobbyReset', (data: { lobby: Lobby }) => {
+            lobby.value = data.lobby
+            isReady.value = false
+            addEvent('LobbyReset', {})
+        })
+
         // Connection lifecycle
         connection.onreconnecting(() => { connectionStatus.value = 'reconnecting' })
         connection.onreconnected(async () => {
@@ -165,12 +171,16 @@ export function useLobbyConnection(lobbyId: string) {
         }
     }
 
-    function resetToLobby() {
+    function returnToLobby() {
         gamePhase.value = 'lobby'
         gameState.value = null
         gameResults.value = null
         countdown.value = 0
         isReady.value = false
+    }
+
+    function resetToLobby() {
+        returnToLobby()
         playerId.value = null
     }
 
@@ -191,6 +201,7 @@ export function useLobbyConnection(lobbyId: string) {
         setReady,
         sendTap,
         fetchGameState,
+        returnToLobby,
         resetToLobby,
     }
 }

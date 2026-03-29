@@ -22,6 +22,7 @@ const {
   joinLobby,
   setReady,
   sendTap,
+  returnToLobby,
   resetToLobby,
 } = useLobbyConnection(lobbyId)
 
@@ -41,7 +42,11 @@ function handleTap() {
   sendTap()
 }
 
-function handleBack() {
+function handlePlayAgain() {
+  returnToLobby()
+}
+
+function handleQuit() {
   resetToLobby()
   router.push('/')
 }
@@ -65,7 +70,8 @@ function handleBack() {
       v-else-if="gamePhase === 'results' && gameResults"
       :results="gameResults"
       :local-player-id="playerId"
-      @back="handleBack"
+      @play-again="handlePlayAgain"
+      @quit="handleQuit"
     />
 
     <!-- COUNTDOWN / PLAYING PHASE -->

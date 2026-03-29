@@ -7,7 +7,8 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  back: []
+  playAgain: []
+  quit: []
 }>()
 </script>
 
@@ -36,7 +37,10 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <button class="back-button" @click="emit('back')">Back to Lobbies</button>
+    <div class="button-row">
+      <button class="play-again-button" @click="emit('playAgain')">Play Again</button>
+      <button class="quit-button" @click="emit('quit')">Quit</button>
+    </div>
   </div>
 </template>
 
@@ -131,8 +135,28 @@ const emit = defineEmits<{
   text-align: right;
 }
 
-.back-button {
+.button-row {
+  display: flex;
+  gap: 1rem;
   margin-top: 1rem;
+}
+
+.play-again-button {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #6366f1;
+  color: #f1f5f9;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.play-again-button:hover {
+  background: #4f46e5;
+}
+
+.quit-button {
   padding: 0.75rem 2rem;
   font-size: 1rem;
   font-weight: 600;
@@ -143,7 +167,7 @@ const emit = defineEmits<{
   cursor: pointer;
 }
 
-.back-button:hover {
+.quit-button:hover {
   background: #475569;
 }
 </style>

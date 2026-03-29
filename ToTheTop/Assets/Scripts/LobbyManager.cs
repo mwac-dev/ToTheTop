@@ -200,6 +200,12 @@ public class LobbyManager : MonoBehaviour
                 _pendingGameEvents.Enqueue(("GameOver", json));
             });
 
+            _hub.On<LobbyEventData>("LobbyReset", data =>
+            {
+                Debug.Log("[SignalR] LobbyReset: lobby returned to waiting state");
+                _pendingLobbyUpdate = data.lobby;
+            });
+
             _hub.Reconnecting += (ex) =>
             {
                 Debug.Log("[SignalR] Reconnecting...");

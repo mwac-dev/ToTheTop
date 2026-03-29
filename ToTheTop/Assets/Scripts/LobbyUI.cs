@@ -117,10 +117,8 @@ public class LobbyUI : MonoBehaviour
                 lobbyManager.CreateAndJoin(name);
         };
 
-        // Refresh lobby list
         _refreshButton.clicked += () => StartCoroutine(FetchLobbies());
 
-        // Lobby panel
         _readyButton.clicked += () =>
         {
             isReady = !isReady;
@@ -128,13 +126,12 @@ public class LobbyUI : MonoBehaviour
             _readyButton.text = isReady ? "READY!" : "Ready Up";
         };
 
-        // Leave lobby
         _leaveButton.clicked += LeaveLobby;
 
-        // Results panel
-        _playAgainButton.clicked += LeaveLobby;
+        _playAgainButton.clicked += ReturnToLobby;
         _quitButton.clicked += () =>
         {
+            LeaveLobby();
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -242,6 +239,14 @@ public class LobbyUI : MonoBehaviour
 
     private void UpdateLobbyDisplay(LobbyData lobby)
     {
+        if (_resultsPanel.style.display == DisplayStyle.Flex)
+        {
+            // Still update the lobby data so it's fresh when they return
+            _lobbyTitle.text = lobby.name;
+            _lobbyStatus.text = $"{lobby.players.Length}/{lobby.maxPlayers} players — {lobby.state}";
+            return;
+        }
+
         ShowPanel(_lobbyPanel);
 
         _lobbyTitle.text = lobby.name;
@@ -370,6 +375,21 @@ public class LobbyUI : MonoBehaviour
             _bars[player.id] = barUI;
             _targetValues[player.id] = 0f;
         }
+    }
+
+    // =====================
+    // Return to Lobby (Play Again)
+    // =====================
+
+    private void ReturnToLobby()
+    {
+        _gameActive = false;
+        _bars.Clear();
+        _targetValues.Clear();
+        isReady = false;
+        _readyButton.text = "Ready Up";
+        _readyButton.SetEnabled(true);
+        ShowPanel(_lobbyPanel);
     }
 
     // =====================

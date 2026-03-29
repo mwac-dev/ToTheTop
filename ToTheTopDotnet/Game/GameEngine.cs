@@ -225,9 +225,21 @@ public class GameEngine : IHostedService, IDisposable
             results,
             timestamp = DateTime.UtcNow
         });
-        Console.WriteLine($"[GameEngine] Game over in {lobbyId}. Winer: {winnerId} ({reason})");
+        Console.WriteLine($"[GameEngine] Game over in {lobbyId}. Winner: {winnerId} ({reason})");
 
-        // cleanup after delay so clients can show results screen
+        // Reset lobby state after a short delay so clients can show results screen
+        _ = Task.Delay(TimeSpan.FromSeconds(2)).ContinueWith(_ =>
+        {
+            if (LobbyCleanup.Lobbies.TryGetValue(lobbyId, out var lobby))
+            {
+                lobby.State = "waiting";
+                foreach (var p in lobby.Players) p.IsReady = false;
+                _hub.Clients.Group(lobbyId).SendAsync("LobbyReset", new { lobby });
+                Console.WriteLine($"[GameEngine] Reset lobby {lobbyId} to waiting state");
+            }
+        });
+
+        // Cleanup game instance after delay
         _ = Task.Delay(TimeSpan.FromSeconds(10)).ContinueWith(_ =>
         {
             _games.TryRemove(lobbyId, out GameInstance _);
