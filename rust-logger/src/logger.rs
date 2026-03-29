@@ -103,39 +103,47 @@ pub fn log_game_over(event: &GameOver) {
         reason_text.white()
     );
 
-    println!(
-        "{}",
-        "         ┌─────────────────────────────────────┐".dimmed()
-    );
+    // Build all lines first so we can measure the widest one
+    let mut lines: Vec<(String, bool)> = Vec::new();
 
     for result in &event.results {
         let is_winner = result.id == event.winner_id;
-        let crown = if is_winner { " 👑" } else { "" };
-
-        let platform_icon = match result.platform.as_str() {
-            "browser" => "[WEB]".cyan(),
-            _ => "[PC]".blue(),
+        let crown = if is_winner { "👑" } else { "" };
+        let platform = match result.platform.as_str() {
+            "browser" => "[WEB]",
+            _ => "[PC] ",
         };
 
-        let name_display = if is_winner {
-            result.name.yellow().bold()
-        } else {
-            result.name.white().normal()
-        };
-
-        println!(
-            "{}",
-            format!(
-                "         │ #{} {} {} — {} taps, {:.1}% {}│",
-                result.rank, platform_icon, name_display, result.tap_count, result.value, crown
-            )
+        let line = format!(
+            "#{} {} {:<15} {:>3} taps {:>5.1}%  {}",
+            result.rank, platform, result.name,
+            result.tap_count, result.value, crown
         );
+
+        lines.push((line, is_winner));
     }
 
-    println!(
-        "{}\n",
-        "         └─────────────────────────────────────┘".dimmed()
-    );
+    // Find the longest line (adding 1 for emoji line)
+    let max_len = lines.iter().map(|(l, winner)| {
+        l.chars().count() + if *winner { 1 } else { 0 }
+    }).max().unwrap_or(0);
+
+    let border = "─".repeat(max_len + 2);
+    println!("         ┌{}┐", border.dimmed());
+
+    for (line, is_winner) in &lines {
+        let extra = if *is_winner { 1 } else { 0 };
+        let pad = max_len - line.chars().count() - extra;
+        let padded = format!("{}{}", line, " ".repeat(pad));
+
+        if *is_winner {
+            println!("         │ {} │", padded.yellow().bold());
+        } else {
+            println!("         │ {} │", padded);
+        }
+    }
+
+    println!("         └{}┘\n", border.dimmed());
 }
 
 pub fn log_unknown(routing_key: &str) {
