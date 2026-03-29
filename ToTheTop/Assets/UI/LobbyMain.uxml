@@ -11,7 +11,7 @@
         <ui:VisualElement class="join-section">
             <ui:Label text="Create Lobby" class="join-section__title" />
             <ui:TextField name="lobby-name-input" />
-            <ui:Button name="create-button" text="Create" class="btn btn--accent" />
+            <ui:Button name="create-button" text="CREATE" class="btn btn--accent" />
         </ui:VisualElement>
 
         <!-- Lobby List Section -->
@@ -19,7 +19,7 @@
             <ui:Label text="Join Lobby" class="join-section__title" />
             <ui:Label name="lobby-list-status" text="Loading..." />
             <ui:ScrollView name="lobby-list-scroll" />
-            <ui:Button name="refresh-button" text="Refresh" class="btn" />
+            <ui:Button name="refresh-button" text="REFRESH" class="btn btn--secondary" />
         </ui:VisualElement>
     </ui:VisualElement>
 
@@ -29,13 +29,14 @@
         <ui:Label name="lobby-status" class="panel-subtitle" style="-unity-text-align: upper-center;" />
         <ui:VisualElement name="player-list" />
         <ui:VisualElement style="flex-direction: row; align-self: center; margin-top: 12px;">
-            <ui:Button name="ready-button" text="Ready Up" class="btn btn--accent btn--large" style="width: 200px;" />
-            <ui:Button name="leave-button" text="Leave" class="btn btn--large" style="width: 120px; margin-left: 12px;" />
+            <ui:Button name="ready-button" text="READY UP" class="btn btn--accent btn--large" style="width: 200px;" />
+            <ui:Button name="leave-button" text="LEAVE" class="btn btn--secondary btn--large" style="width: 120px; margin-left: 12px;" />
         </ui:VisualElement>
     </ui:VisualElement>
 
     <!-- COUNTDOWN PANEL -->
     <ui:VisualElement name="countdown-panel" class="panel" style="display: none;">
+        <ui:VisualElement name="countdown-flash" />
         <ui:Label name="countdown-text" text="3" />
     </ui:VisualElement>
 
@@ -48,10 +49,12 @@
 
     <!-- RESULTS PANEL -->
     <ui:VisualElement name="results-panel" class="panel" style="display: none;">
-        <ui:Label name="results-text" text="" />
-        <ui:VisualElement style="flex-direction: row; align-self: center; margin-top: 16px;">
-            <ui:Button name="play-again-button" text="Play Again" class="btn btn--accent btn--large" style="width: 160px;" />
-            <ui:Button name="quit-button" text="Quit" class="btn btn--large" style="width: 120px; margin-left: 12px;" />
+        <ui:Label name="results-title" text="GAME OVER" />
+        <ui:Label name="results-reason" text="" />
+        <ui:VisualElement name="results-list" />
+        <ui:VisualElement class="results-buttons">
+            <ui:Button name="play-again-button" text="PLAY AGAIN" class="btn btn--accent btn--large" style="width: 180px;" />
+            <ui:Button name="quit-button" text="QUIT" class="btn btn--secondary btn--large" style="width: 120px; margin-left: 12px;" />
         </ui:VisualElement>
     </ui:VisualElement>
 

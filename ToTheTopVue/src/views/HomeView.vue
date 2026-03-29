@@ -21,19 +21,17 @@ async function handleCreate() {
 
 <template>
   <div class="home">
-    <h1>Game Lobbies</h1>
+    <h1 class="game-title">TO THE TOP</h1>
 
-    <!-- Create lobby form -->
     <div class="create-form">
       <input
         v-model="newLobbyName"
         placeholder="Lobby name..."
         @keyup.enter="handleCreate"
       />
-      <button @click="handleCreate">Create Lobby</button>
+      <button class="btn-game create-btn" @click="handleCreate">Create Lobby</button>
     </div>
 
-    <!-- Lobby list -->
     <div v-if="store.loading" class="loading">Loading...</div>
 
     <div v-else-if="store.lobbies.length === 0" class="empty">
@@ -50,7 +48,7 @@ async function handleCreate() {
         <div class="lobby-name">{{ lobby.name }}</div>
         <div class="lobby-info">
           {{ lobby.players.length }}/{{ lobby.maxPlayers }} players
-          · {{ lobby.state }}
+          &middot; {{ lobby.state }}
         </div>
       </router-link>
     </div>
@@ -62,62 +60,92 @@ async function handleCreate() {
   max-width: 600px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: system-ui, sans-serif;
+}
+
+.game-title {
+  font-size: 3rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+  text-shadow: 0 0 40px var(--glow-primary), 0 0 80px rgba(255, 107, 43, 0.15);
+  margin-bottom: 0.5rem;
 }
 
 .create-form {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin: 1.5rem 0;
 }
 
 .create-form input {
   flex: 1;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid #334155;
-  background: #1e293b;
-  color: #f1f5f9;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 3px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
   font-size: 1rem;
-}
-
-.create-form button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  border: none;
-  background: #6366f1;
-  color: white;
   font-weight: 600;
-  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.create-form button:hover { background: #4f46e5; }
+.create-form input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px 2px var(--glow-primary);
+}
+
+.create-btn {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.create-btn:hover {
+  background: var(--accent-primary-hover);
+}
 
 .lobby-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .lobby-item {
   display: block;
   padding: 1rem 1.25rem;
-  border-radius: 0.5rem;
-  background: #1e293b;
-  color: #f1f5f9;
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-primary);
   text-decoration: none;
-  border: 1px solid #334155;
-  transition: border-color 0.2s;
+  border: 3px solid var(--border-default);
+  border-left: 5px solid var(--border-default);
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 
-.lobby-item:hover { border-color: #6366f1; }
+.lobby-item:hover {
+  border-color: var(--accent-primary);
+  border-left-color: var(--accent-primary);
+  background: var(--bg-card-hover);
+  box-shadow: 0 0 12px 1px var(--glow-primary);
+}
 
-.lobby-name { font-weight: 600; }
-.lobby-info { font-size: 0.875rem; color: #94a3b8; margin-top: 0.25rem; }
+.lobby-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.lobby-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
 
 .loading, .empty {
   text-align: center;
   padding: 3rem;
-  color: #94a3b8;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 </style>

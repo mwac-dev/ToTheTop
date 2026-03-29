@@ -21,25 +21,29 @@ const emit = defineEmits<{
 
     <div class="results-list">
       <div
-        v-for="player in results.results"
+        v-for="(player, index) in results.results"
         :key="player.id"
         class="result-row"
         :class="{
           winner: player.id === results.winnerId,
           local: player.id === localPlayerId
         }"
+        :style="{ animationDelay: (index * 0.12) + 's' }"
       >
-        <span class="rank">#{{ player.rank }}</span>
+        <span class="rank">
+          <span v-if="player.id === results.winnerId" class="crown">&#x1F451;</span>
+          #{{ player.rank }}
+        </span>
         <span class="name">{{ player.name }}</span>
-        <span class="platform">{{ player.platform === 'browser' ? '[WEB]' : '[PC]' }}</span>
+        <span class="platform">{{ player.platform === 'browser' ? '\u{1F310}' : '\u{1F5A5}\u{FE0F}' }}</span>
         <span class="value">{{ Math.round(player.value) }}%</span>
         <span class="taps">{{ player.tapCount }} taps</span>
       </div>
     </div>
 
     <div class="button-row">
-      <button class="play-again-button" @click="emit('playAgain')">Play Again</button>
-      <button class="quit-button" @click="emit('quit')">Quit</button>
+      <button class="play-again-button btn-game" @click="emit('playAgain')">Play Again</button>
+      <button class="quit-button btn-game" @click="emit('quit')">Quit</button>
     </div>
   </div>
 </template>
@@ -54,24 +58,29 @@ const emit = defineEmits<{
 }
 
 .title {
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: 900;
-  color: #f1f5f9;
+  color: var(--text-primary);
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 40px var(--glow-primary);
+  animation: title-entrance 0.6s ease-out;
 }
 
 .reason {
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-size: 1.1rem;
   margin: 0;
+  font-weight: 600;
 }
 
 .results-list {
   width: 100%;
-  max-width: 500px;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .result-row {
@@ -79,57 +88,62 @@ const emit = defineEmits<{
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  background: #1e293b;
-  border: 2px solid #334155;
-  border-radius: 0.75rem;
+  background: var(--bg-card);
+  border: 3px solid var(--border-default);
+  border-radius: 12px;
+  animation: slide-in-row 0.4s ease-out both;
 }
 
 .result-row.winner {
-  border-color: #eab308;
+  border-color: var(--accent-winner);
   background: #1a1a0e;
+  animation: slide-in-row 0.4s ease-out both, winner-glow 1.5s ease-in-out 0.6s infinite;
 }
 
 .result-row.local {
-  border-color: #34d399;
-  background: #064e3b;
+  border-color: var(--accent-local);
+  background: var(--accent-local-dim);
 }
 
 .result-row.winner.local {
-  border-color: #eab308;
+  border-color: var(--accent-winner);
   background: #1a2e1a;
 }
 
 .rank {
-  font-weight: 700;
+  font-weight: 800;
   font-size: 1.2rem;
-  width: 2.5rem;
-  color: #e2e8f0;
+  width: 3.5rem;
+  color: var(--text-primary);
+}
+
+.crown {
+  margin-right: 0.15rem;
 }
 
 .result-row.winner .rank {
-  color: #eab308;
+  color: var(--accent-winner);
 }
 
 .name {
-  font-weight: 600;
+  font-weight: 700;
   flex: 1;
+  color: var(--text-primary);
 }
 
 .platform {
-  color: #94a3b8;
-  font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 1rem;
 }
 
 .value {
-  font-weight: 600;
-  color: #a78bfa;
+  font-weight: 700;
+  color: var(--accent-primary);
   width: 3.5rem;
   text-align: right;
 }
 
 .taps {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.8rem;
   width: 5rem;
   text-align: right;
@@ -142,32 +156,25 @@ const emit = defineEmits<{
 }
 
 .play-again-button {
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-  background: #6366f1;
-  color: #f1f5f9;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
+  background: var(--accent-primary);
+  color: white;
+  padding: 0.85rem 2.5rem;
 }
 
 .play-again-button:hover {
-  background: #4f46e5;
+  background: var(--accent-primary-hover);
 }
 
 .quit-button {
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-  background: #334155;
-  color: #f1f5f9;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+  padding: 0.85rem 2.5rem;
 }
 
 .quit-button:hover {
-  background: #475569;
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+  box-shadow: none;
 }
 </style>

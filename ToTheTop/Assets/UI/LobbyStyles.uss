@@ -1,66 +1,85 @@
-/* ===========================
-   Global / Shared
-   =========================== */
-
 .panel {
     flex-grow: 1;
     padding: 20px;
-    background-color: rgba(18, 18, 24, 0.95);
+    background-color: rgba(10, 14, 26, 0.97);
 }
 
 .panel-title {
-    font-size: 28px;
-    color: white;
+    font-size: 32px;
+    color: rgb(240, 242, 255);
     -unity-font-style: bold;
     margin-bottom: 12px;
+    letter-spacing: 4px;
 }
 
 .panel-subtitle {
     font-size: 18px;
-    color: rgb(180, 180, 200);
+    color: rgb(136, 146, 176);
     margin-bottom: 8px;
 }
 
 .btn {
-    height: 40px;
+    height: 44px;
     font-size: 16px;
     -unity-font-style: bold;
-    border-radius: 6px;
-    border-width: 0;
-    padding: 0 16px;
+    border-radius: 10px;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.15);
+    padding: 0 20px;
     color: white;
-    background-color: rgb(60, 80, 180);
+    background-color: rgb(255, 107, 43);
+    transition-property: scale, background-color, border-color;
     transition-duration: 0.15s;
+    scale: 1 1;
+    letter-spacing: 1px;
 }
 
 .btn:hover {
-    background-color: rgb(80, 100, 210);
+    background-color: rgb(255, 138, 80);
+    scale: 1.03 1.03;
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
 .btn:active {
-    background-color: rgb(50, 65, 150);
+    background-color: rgb(229, 90, 27);
+    scale: 0.92 1.04;
 }
 
 .btn:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
 }
 
 .btn--accent {
-    background-color: rgb(40, 160, 80);
+    background-color: rgb(255, 107, 43);
+    color: white;
 }
 
 .btn--accent:hover {
-    background-color: rgb(55, 185, 95);
+    background-color: rgb(255, 138, 80);
+}
+
+.btn--accent:active {
+    background-color: rgb(229, 90, 27);
+    scale: 0.90 1.06;
+}
+
+.btn--secondary {
+    background-color: rgb(20, 24, 39);
+    border-color: rgb(42, 48, 80);
+    color: rgb(136, 146, 176);
+}
+
+.btn--secondary:hover {
+    background-color: rgb(28, 34, 56);
+    border-color: rgb(58, 69, 112);
 }
 
 .btn--large {
-    height: 56px;
-    font-size: 20px;
+    height: 60px;
+    font-size: 22px;
+    border-radius: 14px;
+    border-width: 3px;
 }
-
-/* ===========================
-   Join Panel
-   =========================== */
 
 #join-panel {
     align-items: center;
@@ -70,27 +89,46 @@
 .join-section {
     width: 500px;
     margin-bottom: 24px;
-    padding: 16px;
-    background-color: rgba(40, 40, 55, 0.8);
-    border-radius: 8px;
+    padding: 18px;
+    background-color: rgba(20, 24, 39, 0.9);
+    border-radius: 12px;
+    border-width: 3px;
+    border-color: rgb(42, 48, 80);
 }
 
 .join-section__title {
     font-size: 20px;
-    color: rgb(200, 200, 220);
+    color: rgb(136, 146, 176);
     -unity-font-style: bold;
     margin-bottom: 8px;
+    letter-spacing: 1px;
 }
 
 #lobby-name-input {
-    height: 36px;
+    height: 40px;
     font-size: 16px;
-    margin-bottom: 8px;
-    background-color: rgb(30, 30, 42);
-    color: white;
-    border-color: rgb(70, 70, 90);
-    border-radius: 4px;
-    border-width: 1px;
+    margin-bottom: 10px;
+    background-color: rgb(13, 16, 32);
+    color: rgb(240, 242, 255);
+    border-color: rgb(42, 48, 80);
+    border-radius: 8px;
+    border-width: 3px;
+}
+
+#lobby-name-input > .unity-text-field__input {
+    background-color: rgb(13, 16, 32);
+    color: rgb(240, 242, 255);
+    border-width: 0;
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+#lobby-name-input:focus {
+    border-color: rgb(255, 107, 43);
+}
+
+#lobby-name-input:focus > .unity-text-field__input {
+    background-color: rgb(13, 16, 32);
 }
 
 #lobby-list-scroll {
@@ -100,44 +138,47 @@
 
 #lobby-list-status {
     font-size: 14px;
-    color: rgb(150, 150, 170);
+    color: rgb(74, 82, 128);
     margin-bottom: 4px;
 }
-
-/* ===========================
-   Lobby List Item
-   =========================== */
 
 .lobby-list-item {
     flex-direction: row;
     align-items: center;
-    padding: 8px 12px;
-    margin-bottom: 4px;
-    background-color: rgba(50, 50, 70, 0.6);
-    border-radius: 4px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    background-color: rgba(20, 24, 39, 0.8);
+    border-radius: 8px;
+    border-width: 3px;
+    border-color: rgb(42, 48, 80);
+    border-left-width: 5px;
+    transition-property: border-color, background-color;
+    transition-duration: 0.15s;
+}
+
+.lobby-list-item:hover {
+    border-color: rgb(255, 107, 43);
+    background-color: rgba(28, 34, 56, 0.9);
 }
 
 .lobby-list-item__name {
     flex-grow: 1;
     font-size: 16px;
-    color: white;
+    color: rgb(240, 242, 255);
+    -unity-font-style: bold;
 }
 
 .lobby-list-item__info {
     font-size: 14px;
-    color: rgb(160, 160, 180);
+    color: rgb(136, 146, 176);
     margin-right: 12px;
 }
 
 .lobby-list-item__join-btn {
-    width: 70px;
-    height: 30px;
+    width: 80px;
+    height: 34px;
     font-size: 14px;
 }
-
-/* ===========================
-   Lobby Panel
-   =========================== */
 
 #lobby-panel {
     align-items: center;
@@ -151,38 +192,42 @@
     margin: 16px 0;
 }
 
-/* ===========================
-   Player Card
-   =========================== */
-
 .player-card {
-    width: 140px;
-    padding: 12px;
+    width: 150px;
+    padding: 14px;
     margin: 6px;
     align-items: center;
-    background-color: rgba(50, 50, 70, 0.7);
-    border-radius: 8px;
+    background-color: rgba(20, 24, 39, 0.9);
+    border-radius: 12px;
+    border-width: 3px;
+    border-color: rgb(42, 48, 80);
+    border-left-width: 5px;
+    transition-property: border-color, background-color;
+    transition-duration: 0.2s;
 }
 
 .player-card__name {
     font-size: 16px;
-    color: white;
+    color: rgb(240, 242, 255);
     -unity-font-style: bold;
     margin-bottom: 4px;
 }
 
 .player-card__status {
     font-size: 14px;
-    color: rgb(150, 150, 150);
+    color: rgb(74, 82, 128);
+    -unity-font-style: bold;
 }
 
 .player-card__status--ready {
-    color: rgb(80, 220, 120);
+    color: rgb(0, 232, 123);
 }
 
-/* ===========================
-   Countdown Panel
-   =========================== */
+.player-card--ready {
+    border-color: rgb(0, 232, 123);
+    border-left-color: rgb(0, 232, 123);
+    background-color: rgba(10, 61, 40, 0.8);
+}
 
 #countdown-panel {
     align-items: center;
@@ -190,25 +235,39 @@
 }
 
 #countdown-text {
-    font-size: 96px;
-    color: white;
+    font-size: 120px;
+    color: rgb(240, 242, 255);
     -unity-font-style: bold;
 }
 
-/* ===========================
-   Game Panel
-   =========================== */
+#countdown-flash {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0);
+    transition-property: background-color;
+    transition-duration: 0.4s;
+}
 
 #game-panel {
     padding: 12px;
 }
 
 #timer-text {
-    font-size: 24px;
-    color: rgb(220, 220, 240);
+    font-size: 28px;
+    color: rgb(240, 242, 255);
     -unity-font-style: bold;
     -unity-text-align: upper-center;
     margin-bottom: 12px;
+    letter-spacing: 1px;
+    transition-property: color;
+    transition-duration: 0.3s;
+}
+
+.timer--urgent {
+    color: rgb(255, 71, 87);
 }
 
 #bars-container {
@@ -220,14 +279,12 @@
 }
 
 #tap-button {
-    height: 64px;
-    font-size: 24px;
+    height: 72px;
+    font-size: 28px;
     margin-top: 12px;
+    border-radius: 16px;
+    border-width: 3px;
 }
-
-/* ===========================
-   Player Bar
-   =========================== */
 
 .player-bar {
     flex-direction: column;
@@ -237,17 +294,26 @@
     max-width: 140px;
     margin: 0 6px;
     padding: 8px 4px;
-    background-color: rgba(40, 40, 55, 0.7);
-    border-radius: 6px;
+    background-color: rgba(20, 24, 39, 0.8);
+    border-radius: 10px;
+    border-width: 3px;
+    border-color: rgb(42, 48, 80);
 }
 
 .player-bar--local {
-    background-color: rgba(30, 60, 30, 0.7);
+    background-color: rgba(10, 61, 40, 0.5);
+    border-color: rgb(0, 232, 123);
+}
+
+.player-bar__handle {
+    font-size: 22px;
+    -unity-text-align: upper-center;
+    margin-bottom: 2px;
 }
 
 .player-bar__name {
     font-size: 13px;
-    color: white;
+    color: rgb(240, 242, 255);
     -unity-font-style: bold;
     -unity-text-align: upper-center;
     overflow: hidden;
@@ -257,62 +323,171 @@
 
 .player-bar__platform {
     font-size: 11px;
-    color: rgb(160, 160, 180);
+    color: rgb(136, 146, 176);
     -unity-text-align: upper-center;
     margin-bottom: 4px;
 }
 
 .player-bar__track {
-    width: 36px;
+    width: 40px;
     flex-grow: 1;
-    min-height: 120px;
-    background-color: rgba(20, 20, 30, 0.8);
-    border-radius: 4px;
+    min-height: 300px;
+    background-color: rgba(13, 16, 32, 0.9);
+    border-radius: 6px;
     overflow: hidden;
     justify-content: flex-end;
+    border-width: 2px;
+    border-color: rgba(42, 48, 80, 0.6);
+    transition-property: translate;
+    transition-duration: 0.03s;
 }
 
 .player-bar__fill {
     width: 100%;
     height: 0;
-    border-radius: 4px;
+    border-radius: 6px;
     transition-duration: 0.05s;
 }
 
 .player-bar__fill--local {
-    background-color: rgb(50, 200, 100);
+    background-color: rgb(0, 232, 123);
 }
 
 .player-bar__fill--other {
-    background-color: rgb(75, 130, 230);
+    background-color: rgb(77, 138, 255);
+}
+
+.player-bar__stripe-overlay {
+    position: absolute;
+    left: -50%;
+    width: 200%;
+    bottom: 0;
+    height: 0;
+    overflow: hidden;
+    rotate: -45deg;
+}
+
+.player-bar__stripe-line {
+    width: 100%;
+    height: 3px;
+    margin-bottom: 9px;
+    background-color: rgba(255, 255, 255, 0.07);
 }
 
 .player-bar__taps {
     font-size: 12px;
-    color: rgb(200, 200, 220);
+    color: rgb(136, 146, 176);
     -unity-text-align: upper-center;
     margin-top: 4px;
+    -unity-font-style: bold;
 }
 
-/* ===========================
-   Results Panel
-   =========================== */
+.player-bar__track--glow-local {
+    border-color: rgb(0, 232, 123);
+    border-width: 2px;
+}
+
+.player-bar__track--glow-other {
+    border-color: rgb(77, 138, 255);
+    border-width: 2px;
+}
 
 #results-panel {
     align-items: center;
     justify-content: center;
 }
 
-#results-text {
-    font-size: 18px;
-    color: rgb(220, 220, 240);
+#results-title {
+    font-size: 42px;
+    color: rgb(240, 242, 255);
+    -unity-font-style: bold;
     -unity-text-align: upper-center;
-    white-space: normal;
+    letter-spacing: 3px;
     margin-bottom: 8px;
+}
+
+#results-reason {
+    font-size: 18px;
+    color: rgb(136, 146, 176);
+    -unity-text-align: upper-center;
+    margin-bottom: 16px;
+}
+
+#results-list {
+    width: 420px;
+    align-self: center;
+}
+
+.result-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    background-color: rgba(20, 24, 39, 0.9);
+    border-radius: 12px;
+    border-width: 3px;
+    border-color: rgb(42, 48, 80);
+    opacity: 0;
+    transition-property: opacity, translate;
+    transition-duration: 0.4s;
+}
+
+.result-row--visible {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.result-row--winner {
+    border-color: rgb(255, 215, 0);
+    background-color: rgba(40, 36, 10, 0.9);
+}
+
+.result-row--local {
+    border-color: rgb(0, 232, 123);
+    background-color: rgba(10, 61, 40, 0.7);
+}
+
+.result-row__rank {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(240, 242, 255);
+    width: 50px;
+}
+
+.result-row__rank--winner {
+    color: rgb(255, 215, 0);
+}
+
+.result-row__name {
+    flex-grow: 1;
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(240, 242, 255);
+}
+
+.result-row__platform {
+    font-size: 12px;
+    color: rgb(136, 146, 176);
+    margin-right: 10px;
+}
+
+.result-row__value {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(255, 107, 43);
+    width: 50px;
+    -unity-text-align: upper-right;
+}
+
+.result-row__taps {
+    font-size: 12px;
+    color: rgb(74, 82, 128);
+    width: 60px;
+    -unity-text-align: upper-right;
 }
 
 .results-buttons {
     flex-direction: row;
     align-self: center;
-    margin-top: 16px;
+    margin-top: 20px;
 }

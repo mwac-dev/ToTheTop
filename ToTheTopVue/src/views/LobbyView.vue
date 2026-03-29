@@ -54,18 +54,15 @@ function handleQuit() {
 
 <template>
   <div class="lobby-view">
-    <!-- Connection status indicator -->
     <div class="status-bar" :class="connectionStatus">
       <span class="status-dot" />
       {{ connectionStatus }}
     </div>
 
-    <!-- Loading state -->
     <div v-if="!lobby" class="loading">
       Connecting to lobby...
     </div>
 
-    <!-- GAME RESULTS PHASE -->
     <GameResults
       v-else-if="gamePhase === 'results' && gameResults"
       :results="gameResults"
@@ -74,7 +71,6 @@ function handleQuit() {
       @quit="handleQuit"
     />
 
-    <!-- COUNTDOWN / PLAYING PHASE -->
     <GameArena
       v-else-if="gamePhase === 'countdown' || gamePhase === 'playing'"
       :game-state="gameState"
@@ -84,16 +80,14 @@ function handleQuit() {
       @tap="handleTap"
     />
 
-    <!-- LOBBY PHASE -->
     <template v-else>
       <header>
-        <h1>{{ lobby.name }}</h1>
+        <h1 class="lobby-title">{{ lobby.name }}</h1>
         <span class="badge" :class="lobby.state">{{ lobby.state }}</span>
       </header>
 
-      <!-- Join form -->
       <section
-        v-if="!playerId && !lobby.isFull && lobby.state === 'waiting'"
+        v-if="!playerId && lobby.players.length < lobby.maxPlayers && lobby.state === 'waiting'"
         class="join-section"
       >
         <form @submit.prevent="handleJoin" class="join-form">
@@ -104,13 +98,12 @@ function handleQuit() {
             class="join-input"
             maxlength="20"
           />
-          <button type="submit" class="join-button" :disabled="!joinName.trim()">
+          <button type="submit" class="btn-game join-button" :disabled="!joinName.trim()">
             Join Lobby
           </button>
         </form>
       </section>
 
-      <!-- Ready button -->
       <section v-if="playerId && lobby.state === 'waiting'" class="ready-section">
         <button
           class="ready-button"
@@ -121,7 +114,6 @@ function handleQuit() {
         </button>
       </section>
 
-      <!-- Player list -->
       <section class="players">
         <h2>Players ({{ lobby.players.length }}/{{ lobby.maxPlayers }})</h2>
         <div class="player-grid">
@@ -131,16 +123,12 @@ function handleQuit() {
             class="player-card"
             :class="{ ready: player.isReady, self: player.id === playerId }"
           >
-            <div class="player-name">
-              {{ player.name }}
-              <span v-if="player.id === playerId" class="you-tag">(YOU)</span>
-            </div>
+            <div class="player-name">{{ player.name }}</div>
             <div class="player-status">
               {{ player.isReady ? 'READY' : 'Not Ready' }}
             </div>
           </div>
 
-          <!-- Empty slots -->
           <div
             v-for="i in (lobby.maxPlayers - lobby.players.length)"
             :key="'empty-' + i"
@@ -151,7 +139,6 @@ function handleQuit() {
         </div>
       </section>
 
-      <!-- Live event feed -->
       <section class="events">
         <h2>Live Events</h2>
         <div class="event-list">
@@ -176,7 +163,6 @@ function handleQuit() {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: system-ui, sans-serif;
 }
 
 .status-bar {
@@ -184,9 +170,13 @@ function handleQuit() {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   margin-bottom: 1.5rem;
+  border: 2px solid transparent;
 }
 
 .status-dot {
@@ -195,14 +185,14 @@ function handleQuit() {
   border-radius: 50%;
 }
 
-.status-bar.connected { background: #065f46; color: #a7f3d0; }
-.status-bar.connected .status-dot { background: #34d399; }
-.status-bar.disconnected { background: #7f1d1d; color: #fca5a5; }
-.status-bar.disconnected .status-dot { background: #f87171; }
-.status-bar.reconnecting { background: #78350f; color: #fcd34d; }
+.status-bar.connected { background: #062e22; color: var(--accent-local); border-color: #0a3d28; }
+.status-bar.connected .status-dot { background: var(--accent-local); box-shadow: 0 0 8px var(--glow-local); }
+.status-bar.disconnected { background: #2d0a0a; color: var(--accent-danger); border-color: #3d1414; }
+.status-bar.disconnected .status-dot { background: var(--accent-danger); }
+.status-bar.reconnecting { background: #2d1f0a; color: #fbbf24; border-color: #3d2a14; }
 .status-bar.reconnecting .status-dot { background: #fbbf24; }
-.status-bar.error { background: #7f1d1d; color: #fca5a5; }
-.status-bar.error .status-dot { background: #f87171; }
+.status-bar.error { background: #2d0a0a; color: var(--accent-danger); border-color: #3d1414; }
+.status-bar.error .status-dot { background: var(--accent-danger); }
 
 header {
   display: flex;
@@ -211,19 +201,31 @@ header {
   margin-bottom: 2rem;
 }
 
-h1 { margin: 0; }
+.lobby-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+h2 {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
 
 .badge {
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 0.85rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
-.badge.waiting { background: #1e3a5f; color: #93c5fd; }
-.badge.in_game { background: #065f46; color: #a7f3d0; }
+.badge.waiting { background: var(--accent-other-dim); color: var(--accent-other); border: 1px solid rgba(77,138,255,0.3); }
+.badge.in_game { background: var(--accent-local-dim); color: var(--accent-local); border: 1px solid rgba(0,232,123,0.3); }
 
-/* Join form */
 .join-section {
   margin-bottom: 1.5rem;
 }
@@ -236,39 +238,30 @@ h1 { margin: 0; }
 .join-input {
   flex: 1;
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  border: 2px solid #334155;
-  background: #1e293b;
-  color: #f1f5f9;
+  border-radius: 10px;
+  border: 3px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
   font-size: 1rem;
+  font-weight: 600;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .join-input:focus {
-  border-color: #6366f1;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px 2px var(--glow-primary);
 }
 
 .join-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  border: none;
-  background: #6366f1;
+  background: var(--accent-primary);
   color: white;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.join-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .join-button:not(:disabled):hover {
-  background: #4f46e5;
+  background: var(--accent-primary-hover);
 }
 
-/* Ready button */
 .ready-section {
   margin-bottom: 1.5rem;
 }
@@ -276,24 +269,32 @@ h1 { margin: 0; }
 .ready-button {
   width: 100%;
   padding: 1rem;
-  border-radius: 0.75rem;
-  border: 2px solid #334155;
-  background: #1e293b;
-  color: #94a3b8;
+  border-radius: 12px;
+  border: 3px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-secondary);
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.ready-button.active {
-  border-color: #34d399;
-  background: #064e3b;
-  color: #34d399;
+.ready-button:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px 2px var(--glow-primary);
 }
 
-.ready-button:hover {
-  border-color: #6366f1;
+.ready-button:active {
+  animation: button-squish 0.25s ease-out;
+}
+
+.ready-button.active {
+  border-color: var(--accent-local);
+  background: var(--accent-local-dim);
+  color: var(--accent-local);
+  box-shadow: 0 0 20px 3px var(--glow-local);
 }
 
 .player-grid {
@@ -305,40 +306,43 @@ h1 { margin: 0; }
 
 .player-card {
   padding: 1.25rem;
-  border-radius: 0.75rem;
-  border: 2px solid #334155;
-  background: #1e293b;
+  border-radius: 12px;
+  border: 3px solid var(--border-default);
+  border-left: 5px solid var(--border-default);
+  background: var(--bg-card);
   transition: all 0.3s ease;
 }
 
 .player-card.ready {
-  border-color: #34d399;
-  background: #064e3b;
+  border-color: var(--accent-local);
+  border-left-color: var(--accent-local);
+  background: var(--accent-local-dim);
 }
 
 .player-card.self {
-  box-shadow: 0 0 0 1px #6366f1;
+  box-shadow: 0 0 12px 1px var(--glow-primary);
 }
 
 .player-card.empty {
   border-style: dashed;
-  opacity: 0.4;
+  opacity: 0.35;
 }
 
 .player-name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.1rem;
-}
-
-.you-tag {
-  color: #34d399;
-  font-size: 0.8rem;
+  color: var(--text-primary);
 }
 
 .player-status {
   margin-top: 0.5rem;
-  font-size: 0.875rem;
-  opacity: 0.7;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.player-card.ready .player-status {
+  color: var(--accent-local);
 }
 
 .events {
@@ -351,8 +355,9 @@ h1 { margin: 0; }
   font-size: 0.8rem;
   max-height: 300px;
   overflow-y: auto;
-  background: #0f172a;
-  border-radius: 0.5rem;
+  background: var(--bg-track);
+  border: 2px solid var(--border-default);
+  border-radius: 10px;
   padding: 1rem;
 }
 
@@ -362,15 +367,16 @@ h1 { margin: 0; }
   gap: 1rem;
 }
 
-.event-time { color: #64748b; }
-.event-type { color: #a78bfa; font-weight: 600; }
-.event-data { color: #94a3b8; }
+.event-time { color: var(--text-muted); }
+.event-type { color: var(--accent-primary); font-weight: 700; }
+.event-data { color: var(--text-secondary); }
 
-.no-events { color: #64748b; font-style: italic; }
+.no-events { color: var(--text-muted); font-style: italic; }
 
 .loading {
   text-align: center;
   padding: 4rem;
-  color: #94a3b8;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 </style>

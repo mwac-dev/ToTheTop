@@ -7,10 +7,6 @@ using UnityEngine.Networking;
 using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Drives the full UI lifecycle: join → lobby → countdown → game → results.
-/// Listens to LobbyManager for both lobby and game events.
-/// </summary>
 public class LobbyUI : MonoBehaviour
 {
     [Header("References")]
@@ -25,7 +21,6 @@ public class LobbyUI : MonoBehaviour
     [Header("Game Settings")]
     [SerializeField] private float lerpSpeed = 10f;
 
-    // Panels
     private VisualElement _joinPanel;
     private VisualElement _lobbyPanel;
     private VisualElement _countdownPanel;
@@ -33,37 +28,32 @@ public class LobbyUI : MonoBehaviour
     private VisualElement _resultsPanel;
     private VisualElement[] _allPanels;
 
-    // Join panel elements
     private TextField _lobbyNameInput;
     private Button _createButton;
     private ScrollView _lobbyListScroll;
     private Button _refreshButton;
     private Label _lobbyListStatus;
 
-    // Lobby panel elements
     private Label _lobbyTitle;
     private Label _lobbyStatus;
     private VisualElement _playerList;
     private Button _readyButton;
     private Button _leaveButton;
 
-    // Countdown panel elements
     private Label _countdownText;
+    private VisualElement _countdownFlash;
 
-    // Game panel elements
     private VisualElement _barsContainer;
     private Label _timerText;
     private Button _tapButton;
 
-    // Results panel elements
-    private Label _resultsText;
+    private Label _resultsTitle;
+    private Label _resultsReason;
+    private VisualElement _resultsList;
     private Button _playAgainButton;
     private Button _quitButton;
 
-    // Lobby state
     private bool isReady;
-
-    // Game state
     private bool _gameActive;
     private readonly Dictionary<string, PlayerBarUI> _bars = new();
     private readonly Dictionary<string, float> _targetValues = new();
@@ -72,7 +62,6 @@ public class LobbyUI : MonoBehaviour
     {
         var root = uiDocument.rootVisualElement;
 
-        // Query panels
         _joinPanel = root.Q("join-panel");
         _lobbyPanel = root.Q("lobby-panel");
         _countdownPanel = root.Q("countdown-panel");
@@ -80,36 +69,33 @@ public class LobbyUI : MonoBehaviour
         _resultsPanel = root.Q("results-panel");
         _allPanels = new[] { _joinPanel, _lobbyPanel, _countdownPanel, _gamePanel, _resultsPanel };
 
-        // Query join panel
         _lobbyNameInput = root.Q<TextField>("lobby-name-input");
         _createButton = root.Q<Button>("create-button");
         _lobbyListScroll = root.Q<ScrollView>("lobby-list-scroll");
         _refreshButton = root.Q<Button>("refresh-button");
         _lobbyListStatus = root.Q<Label>("lobby-list-status");
 
-        // Query lobby panel
         _lobbyTitle = root.Q<Label>("lobby-title");
         _lobbyStatus = root.Q<Label>("lobby-status");
         _playerList = root.Q("player-list");
         _readyButton = root.Q<Button>("ready-button");
         _leaveButton = root.Q<Button>("leave-button");
 
-        // Query countdown panel
         _countdownText = root.Q<Label>("countdown-text");
+        _countdownFlash = root.Q("countdown-flash");
 
-        // Query game panel
         _barsContainer = root.Q("bars-container");
         _timerText = root.Q<Label>("timer-text");
         _tapButton = root.Q<Button>("tap-button");
 
-        // Query results panel
-        _resultsText = root.Q<Label>("results-text");
+        _resultsTitle = root.Q<Label>("results-title");
+        _resultsReason = root.Q<Label>("results-reason");
+        _resultsList = root.Q("results-list");
         _playAgainButton = root.Q<Button>("play-again-button");
         _quitButton = root.Q<Button>("quit-button");
 
         ShowPanel(_joinPanel);
 
-        // Create lobby
         _createButton.clicked += () =>
         {
             var name = _lobbyNameInput.value.Trim();
@@ -123,12 +109,17 @@ public class LobbyUI : MonoBehaviour
         {
             isReady = !isReady;
             lobbyManager.SetReady(isReady);
-            _readyButton.text = isReady ? "READY!" : "Ready Up";
+            _readyButton.text = isReady ? "READY!" : "READY UP";
+            StartCoroutine(BounceElement(_readyButton, 0.2f));
         };
 
         _leaveButton.clicked += LeaveLobby;
 
-        _playAgainButton.clicked += ReturnToLobby;
+        _playAgainButton.clicked += () =>
+        {
+            StartCoroutine(BounceElement(_playAgainButton, 0.2f));
+            ReturnToLobby();
+        };
         _quitButton.clicked += () =>
         {
             LeaveLobby();
@@ -139,16 +130,17 @@ public class LobbyUI : MonoBehaviour
 #endif
         };
 
-        // Game panel
-        _tapButton.clicked += SendTap;
+        _tapButton.clicked += () =>
+        {
+            SendTap();
+            StartCoroutine(BounceElement(_tapButton, 0.2f));
+        };
 
-        // Subscribe to events
         lobbyManager.OnLobbyUpdated += UpdateLobbyDisplay;
         lobbyManager.OnGameStarting += HandleGameStarting;
         lobbyManager.OnError += (err) => Debug.LogError(err);
         lobbyManager.OnGameEvent += HandleGameEvent;
 
-        // Fetch lobbies on start
         StartCoroutine(FetchLobbies());
     }
 
@@ -157,6 +149,7 @@ public class LobbyUI : MonoBehaviour
         if (_gameActive && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             SendTap();
+            StartCoroutine(BounceElement(_tapButton, 0.2f));
         }
 
         foreach (var (playerId, bar) in _bars)
@@ -165,23 +158,66 @@ public class LobbyUI : MonoBehaviour
             {
                 bar.CurrentValue = Mathf.Lerp(bar.CurrentValue, target, Time.deltaTime * lerpSpeed);
                 bar.UpdateFill(bar.CurrentValue / 100f);
+                bar.ApplyShake(bar.CurrentValue);
+                bar.AnimateStripes(Time.deltaTime, bar.CurrentValue);
             }
         }
     }
 
-    // =====================
-    // Panel Management
-    // =====================
+    private IEnumerator BounceElement(VisualElement el, float duration)
+    {
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float progress = t / duration;
+            float squash = 1f + 0.15f * Mathf.Sin(progress * Mathf.PI * 2.5f) * (1f - progress);
+            float stretch = 2f - squash;
+            el.style.scale = new Scale(new Vector2(stretch, squash));
+            yield return null;
+        }
+        el.style.scale = new Scale(Vector2.one);
+    }
+
+    private IEnumerator CountdownPop(Label label, float duration)
+    {
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float progress = t / duration;
+            float scale;
+            if (progress < 0.4f)
+                scale = Mathf.Lerp(2.5f, 0.9f, progress / 0.4f);
+            else if (progress < 0.6f)
+                scale = Mathf.Lerp(0.9f, 1.08f, (progress - 0.4f) / 0.2f);
+            else
+                scale = Mathf.Lerp(1.08f, 1f, (progress - 0.6f) / 0.4f);
+
+            label.style.scale = new Scale(Vector2.one * scale);
+            yield return null;
+        }
+        label.style.scale = new Scale(Vector2.one);
+    }
+
+    private IEnumerator FlashScreen(VisualElement flashEl, float duration)
+    {
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float alpha = Mathf.Lerp(0.35f, 0f, t / duration);
+            flashEl.style.backgroundColor = new Color(1f, 1f, 1f, alpha);
+            yield return null;
+        }
+        flashEl.style.backgroundColor = new Color(1f, 1f, 1f, 0f);
+    }
 
     private void ShowPanel(VisualElement panel)
     {
         foreach (var p in _allPanels)
             p.style.display = p == panel ? DisplayStyle.Flex : DisplayStyle.None;
     }
-
-    // =====================
-    // Lobby List
-    // =====================
 
     private IEnumerator FetchLobbies()
     {
@@ -198,7 +234,6 @@ public class LobbyUI : MonoBehaviour
             yield break;
         }
 
-        // JsonUtility can't deserialize top-level arrays
         var json = "{\"items\":" + request.downloadHandler.text + "}";
         var lobbyList = JsonUtility.FromJson<LobbyListWrapper>(json);
 
@@ -233,15 +268,10 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    // =====================
-    // Lobby Events
-    // =====================
-
     private void UpdateLobbyDisplay(LobbyData lobby)
     {
         if (_resultsPanel.style.display == DisplayStyle.Flex)
         {
-            // Still update the lobby data so it's fresh when they return
             _lobbyTitle.text = lobby.name;
             _lobbyStatus.text = $"{lobby.players.Length}/{lobby.maxPlayers} players — {lobby.state}";
             return;
@@ -259,13 +289,21 @@ public class LobbyUI : MonoBehaviour
             var card = playerCardTemplate.Instantiate();
             var nameText = card.Q<Label>("Name");
             var statusText = card.Q<Label>("Status");
+            var cardEl = card.Q(className: "player-card");
 
             nameText.text = player.name;
             statusText.text = player.isReady ? "READY" : "Waiting...";
 
             statusText.RemoveFromClassList("player-card__status--ready");
+            if (cardEl != null)
+                cardEl.RemoveFromClassList("player-card--ready");
+
             if (player.isReady)
+            {
                 statusText.AddToClassList("player-card__status--ready");
+                if (cardEl != null)
+                    cardEl.AddToClassList("player-card--ready");
+            }
 
             _playerList.Add(card);
         }
@@ -276,10 +314,6 @@ public class LobbyUI : MonoBehaviour
         _lobbyStatus.text = "GAME STARTING!";
         _readyButton.SetEnabled(false);
     }
-
-    // =====================
-    // Game Events
-    // =====================
 
     private void HandleGameEvent(string eventType, string json)
     {
@@ -306,6 +340,20 @@ public class LobbyUI : MonoBehaviour
         ShowPanel(_countdownPanel);
         int count = Mathf.CeilToInt((float)data.countdown);
         _countdownText.text = count > 0 ? count.ToString() : "GO!";
+
+        StopCoroutine(nameof(CountdownPop));
+        StartCoroutine(CountdownPop(_countdownText, 0.5f));
+
+        if (count <= 0)
+        {
+            _countdownText.style.color = new Color(1f, 0.42f, 0.17f);
+            if (_countdownFlash != null)
+                StartCoroutine(FlashScreen(_countdownFlash, 0.4f));
+        }
+        else
+        {
+            _countdownText.style.color = new Color(0.94f, 0.95f, 1f);
+        }
     }
 
     private void HandleGamePlaying(string json)
@@ -318,7 +366,28 @@ public class LobbyUI : MonoBehaviour
     private void HandleTick(string json)
     {
         var data = JsonUtility.FromJson<TickData>(json);
-        _timerText.text = $"{Mathf.CeilToInt(data.timeRemaining)}s";
+        int timeLeft = Mathf.CeilToInt(data.timeRemaining);
+        _timerText.text = $"{timeLeft}s";
+
+        if (data.timeRemaining <= 5f)
+        {
+            _timerText.style.color = new Color(1f, 0.28f, 0.34f);
+            if (!_timerText.ClassListContains("timer--urgent"))
+                _timerText.AddToClassList("timer--urgent");
+            float pulse = 1f + 0.05f * Mathf.Sin(Time.time * 12f);
+            _timerText.style.scale = new Scale(Vector2.one * pulse);
+        }
+        else if (data.timeRemaining <= 10f)
+        {
+            _timerText.style.color = new Color(1f, 0.28f, 0.34f);
+            _timerText.style.scale = new Scale(Vector2.one);
+        }
+        else
+        {
+            _timerText.style.color = new Color(0.94f, 0.95f, 1f);
+            _timerText.RemoveFromClassList("timer--urgent");
+            _timerText.style.scale = new Scale(Vector2.one);
+        }
 
         foreach (var player in data.players)
         {
@@ -339,23 +408,69 @@ public class LobbyUI : MonoBehaviour
 
         var data = JsonUtility.FromJson<GameOverData>(json);
 
-        var sb = new StringBuilder();
-        sb.AppendLine("<size=32>GAME OVER</size>\n");
-        sb.AppendLine($"Reason: {data.reason}\n");
+        if (_resultsTitle != null)
+            _resultsTitle.text = "GAME OVER";
+        if (_resultsReason != null)
+            _resultsReason.text = data.reason == "reached_top" ? "Someone reached the top!" : "Time ran out!";
 
-        foreach (var result in data.results)
+        if (_resultsList != null)
         {
-            string crown = result.id == data.winnerId ? " <color=#FFD700>WINNER</color>" : "";
-            string platform = result.platform == "browser" ? "[WEB]" : "[PC]";
-            sb.AppendLine($"#{result.rank}  {platform} {result.name} — {result.tapCount} taps{crown}");
+            _resultsList.Clear();
+
+            for (int i = 0; i < data.results.Length; i++)
+            {
+                var result = data.results[i];
+                bool isWinner = result.id == data.winnerId;
+                bool isLocal = result.id == lobbyManager.PlayerId;
+                string platform = result.platform == "browser" ? "\U0001F310" : "\U0001F5A5\uFE0F";
+                string crown = isWinner ? "\U0001F451 " : "";
+
+                var row = new VisualElement();
+                row.AddToClassList("result-row");
+                if (isWinner) row.AddToClassList("result-row--winner");
+                if (isLocal) row.AddToClassList("result-row--local");
+
+                row.style.opacity = 0f;
+                row.style.translate = new Translate(40f, 0f);
+
+                var rankLabel = new Label($"{crown}#{result.rank}");
+                rankLabel.AddToClassList("result-row__rank");
+                if (isWinner) rankLabel.AddToClassList("result-row__rank--winner");
+
+                var nameLabel = new Label(result.name);
+                nameLabel.AddToClassList("result-row__name");
+
+                var platformLabel = new Label(platform);
+                platformLabel.AddToClassList("result-row__platform");
+
+                var valueLabel = new Label($"{Mathf.RoundToInt(result.value)}%");
+                valueLabel.AddToClassList("result-row__value");
+
+                var tapsLabel = new Label($"{result.tapCount} taps");
+                tapsLabel.AddToClassList("result-row__taps");
+
+                row.Add(rankLabel);
+                row.Add(nameLabel);
+                row.Add(platformLabel);
+                row.Add(valueLabel);
+                row.Add(tapsLabel);
+
+                _resultsList.Add(row);
+
+                int delayMs = (i + 1) * 120;
+                var capturedRow = row;
+                row.schedule.Execute(() =>
+                {
+                    capturedRow.AddToClassList("result-row--visible");
+                    capturedRow.style.translate = new Translate(0f, 0f);
+                    capturedRow.style.opacity = 1f;
+                }).StartingIn(delayMs);
+            }
         }
 
-        _resultsText.text = sb.ToString();
+        if (_resultsTitle != null)
+            StartCoroutine(CountdownPop(_resultsTitle, 0.6f));
     }
-
-    // =====================
-    // Game Bar Creation
-    // =====================
 
     private void CreatePlayerBars()
     {
@@ -365,11 +480,12 @@ public class LobbyUI : MonoBehaviour
 
         if (lobbyManager.CurrentLobby?.players == null) return;
 
-        foreach (var player in lobbyManager.CurrentLobby.players)
+        for (int i = 0; i < lobbyManager.CurrentLobby.players.Length; i++)
         {
+            var player = lobbyManager.CurrentLobby.players[i];
             var barElement = playerBarTemplate.Instantiate();
             bool isLocal = player.id == lobbyManager.PlayerId;
-            var barUI = new PlayerBarUI(barElement, player.name, player.id, isLocal);
+            var barUI = new PlayerBarUI(barElement, player.name, player.id, isLocal, i);
 
             _barsContainer.Add(barElement);
             _bars[player.id] = barUI;
@@ -377,24 +493,16 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    // =====================
-    // Return to Lobby (Play Again)
-    // =====================
-
     private void ReturnToLobby()
     {
         _gameActive = false;
         _bars.Clear();
         _targetValues.Clear();
         isReady = false;
-        _readyButton.text = "Ready Up";
+        _readyButton.text = "READY UP";
         _readyButton.SetEnabled(true);
         ShowPanel(_lobbyPanel);
     }
-
-    // =====================
-    // Leave Lobby
-    // =====================
 
     private void LeaveLobby()
     {
@@ -403,15 +511,11 @@ public class LobbyUI : MonoBehaviour
         _bars.Clear();
         _targetValues.Clear();
         isReady = false;
-        _readyButton.text = "Ready Up";
+        _readyButton.text = "READY UP";
         _readyButton.SetEnabled(true);
         ShowPanel(_joinPanel);
         StartCoroutine(FetchLobbies());
     }
-
-    // =====================
-    // Tap Input
-    // =====================
 
     private void SendTap()
     {
@@ -431,10 +535,6 @@ public class LobbyUI : MonoBehaviour
         yield return request.SendWebRequest();
     }
 
-    // =====================
-    // Cleanup
-    // =====================
-
     private void OnDestroy()
     {
         if (lobbyManager != null)
@@ -444,10 +544,6 @@ public class LobbyUI : MonoBehaviour
             lobbyManager.OnGameEvent -= HandleGameEvent;
         }
     }
-
-    // =====================
-    // Serialization Types
-    // =====================
 
     [Serializable] public class TapRequest { public string playerId; }
     [Serializable] public class CountdownData { public double countdown; }
